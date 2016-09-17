@@ -1,4 +1,5 @@
 import DS from 'ember-data';
+import coerceId from "ember-data/-private/system/coerce-id";
 
 export default DS.Store.extend({
     didSaveRecord(internalModel, dataArg) {

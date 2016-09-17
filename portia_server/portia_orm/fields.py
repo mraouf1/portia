@@ -2,7 +2,10 @@ import re
 
 from marshmallow import fields, Schema, validate
 from marshmallow.utils import get_value, missing
+
 from six import iteritems, itervalues
+
+from slybot.starturls import StartUrlCollection
 
 from .collection import ListDescriptor
 from .deletion import CASCADE, CLEAR, PROTECT

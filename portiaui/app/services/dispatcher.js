@@ -321,6 +321,27 @@ export default Ember.Service.extend({
         startUrl.fragments.addObject(emptyFragment);
     },
 
+    changeSpiderName(spider) {
+        const store = this.get('store');
+
+        return (json) => {
+            let internalModel = spider._internalModel;
+            const newId = json.data.id;
+
+            // Update internal store with internal model
+            const recordMap = store.typeMapFor(internalModel.type).idToRecord;
+            delete recordMap[internalModel.id];
+            recordMap[newId] = internalModel;
+
+            // Allows changing ED model id
+            internalModel.id = newId;
+            // Allows adapters to infer the correct url
+            internalModel._links.self = json.data.links.self;
+
+            spider.set('id', newId);
+        };
+    },
+
     changeAnnotationSource(annotation, attribute) {
         if (annotation) {
             annotation.set('attribute', attribute);

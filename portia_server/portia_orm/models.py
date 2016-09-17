@@ -195,7 +195,6 @@ class Spider(Model):
     # TODO: validate id against allowed file name
     id = String(primary_key=True)
     start_urls = List(Nested(StartUrl))
-    # TODO: generated urls
     links_to_follow = String(default='all', validate=OneOf(
         ['none', 'patterns', 'all', 'auto']))
     allowed_domains = List(Domain)
