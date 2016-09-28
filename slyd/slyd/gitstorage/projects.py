@@ -9,8 +9,10 @@ from slyd.projects import ProjectsManager
 from slyd.errors import BadRequest
 from slyd.utils.copy import GitSpiderCopier
 from slyd.utils.download import ProjectArchiver, CodeProjectArchiver
-from slyd.utils.storage import ContentFile, GitStorage
-from .repoman import Repoman
+
+from storage.backends import ContentFile, GitStorage
+from storage.repoman import Repoman
+
 _SHA = re.compile('[a-f0-9]{7,40}')
 
 
@@ -25,7 +27,7 @@ class GitProjectMixin(object):
 
     @classmethod
     def setup(cls, storage_backend, location):
-        Repoman.setup(storage_backend, location)
+        Repoman.setup(storage_backend)
         cls.base_dir = ''
         if exists(location):
             cls.base_dir = location
