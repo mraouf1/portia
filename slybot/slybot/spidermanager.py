@@ -47,8 +47,9 @@ class SlybotSpiderManager(object):
         spec = self._specs["spiders"][spider_name]
         items = self._specs["items"]
         extractors = self._specs["extractors"]
-
         class SlybotSpider(self.spider_cls):
+            # KIPP
+            merchant_name = spider_name[0: spider_name.index('.')]
             def __init__(self_, **kwargs):
                 super(SlybotSpider, self_).__init__(spider_name, spec, items,
                                                     extractors, self.settings,
