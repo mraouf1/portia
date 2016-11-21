@@ -689,7 +689,7 @@ export var SlydApi = Ember.Object.extend({
         hash.data = data;
         hash.url = this.get('scrapelyUrl') + 'train';
         return this.makeAjaxCall(hash).catch(function(err) {
-            err.title = 'Failed to fetch page';
+            err.title = 'Failed to train scrapely';
             throw err;
         });
     },

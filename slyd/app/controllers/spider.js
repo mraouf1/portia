@@ -354,10 +354,19 @@ export default BaseController.extend({
     },
 
     trainScrapely: function() {
-        console.log("Hello World!...");
+        let result = null;
+
         this.get('documentView').hideLoading();
         this.set('testing', false);
-        return this.get('slyd').trainScrapely(this.get('model.name'));
+        this.showSuccessNotification("Training scrapely started",
+                          "The training process of scrapely is started successfully");
+
+        result = this.get('slyd').trainScrapely(this.get('model.name')).then(() => {
+            this.showSuccessNotification("Training scrapely finished",
+                            "The training process of scrapely is finished successfully");}).catch(function(err){
+                              throw err;
+                            });
+        return result;
     },
 
     reload: function() {

@@ -6821,10 +6821,20 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         trainScrapely: function trainScrapely() {
-            console.log("Hello World!...");
+            var _this4 = this;
+
+            var result = null;
+
             this.get('documentView').hideLoading();
             this.set('testing', false);
-            return this.get('slyd').trainScrapely(this.get('model.name'));
+            this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
+
+            result = this.get('slyd').trainScrapely(this.get('model.name')).then(function () {
+                _this4.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+            })['catch'](function (err) {
+                throw err;
+            });
+            return result;
         },
 
         reload: function reload() {
@@ -7066,7 +7076,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         _willEnter: function _willEnter() {
-            var _this4 = this;
+            var _this5 = this;
 
             // willEnter spider.index controller
             this.get('extractedItems').setObjects([]);
@@ -7078,10 +7088,10 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             });
             this.get('browseHistory').clear();
             Ember['default'].run.next(function () {
-                if (_this4.get('url')) {
-                    _this4.loadUrl(_this4.get('url'), _this4.get('baseurl'));
-                    _this4.set('url', null);
-                    _this4.set('baseurl', null);
+                if (_this5.get('url')) {
+                    _this5.loadUrl(_this5.get('url'), _this5.get('baseurl'));
+                    _this5.set('url', null);
+                    _this5.set('baseurl', null);
                 }
             });
         },
@@ -31691,7 +31701,7 @@ define('portia-web/utils/slyd-api', ['exports', 'ember', 'ic-ajax', 'portia-web/
             hash.data = data;
             hash.url = this.get('scrapelyUrl') + 'train';
             return this.makeAjaxCall(hash)['catch'](function (err) {
-                err.title = 'Failed to fetch page';
+                err.title = 'Failed to train scrapely';
                 throw err;
             });
         },
