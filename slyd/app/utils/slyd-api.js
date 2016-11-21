@@ -41,7 +41,9 @@ export var SlydApi = Ember.Object.extend({
         return this.getApiUrl() + '/' + this.project + '/bot/';
     }.property('project'),
 
-
+    scrapelyUrl: function() {
+        return this.getApiUrl() + '/' + this.project + '/scrapely/';
+    }.property('project'),
     /**
     @public
 
@@ -661,6 +663,31 @@ export var SlydApi = Ember.Object.extend({
         }
         hash.data = data;
         hash.url = this.get('botUrl') + 'fetch';
+        return this.makeAjaxCall(hash).catch(function(err) {
+            err.title = 'Failed to fetch page';
+            throw err;
+        });
+    },
+
+    /**
+    @public
+
+    Training scrapely using a given spider.
+
+    @method trainScrapely
+    @for this
+    @param {String} [spiderName] the name of the spider to use.
+    @return {Promise} a promise that fulfills with an {Object} containing
+        the document contents (page), the response data (response), the
+        extracted items (items), the request fingerprint (fp), an error
+        message (error) and the links that will be followed (links).
+    */
+    trainScrapely: function(spiderName) {
+        var hash = {};
+        hash.type = 'POST';
+        var data = { spider: spiderName || this.get('spider') };
+        hash.data = data;
+        hash.url = this.get('scrapelyUrl') + 'train';
         return this.makeAjaxCall(hash).catch(function(err) {
             err.title = 'Failed to fetch page';
             throw err;
