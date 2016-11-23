@@ -47,41 +47,26 @@ export default Ember.Object.extend({
         });
     }.property('_sprites.@each', '_ignores.@each'),
 
-    addSprite: function(element, text, scrapelyData=null, options={}) {
+    addSprite: function(element, text, options={}) {
         var updated = false;
         this.get('_sprites').forEach(function(sprite) {
             if (Ember.$(sprite.element).get(0) === element) {
                 sprite.setProperties(options);
                 sprite.set('name', text);
-                if (scrapelyData != null) sprite.set('scrapelyData', scrapelyData[0]);
                 updated = true;
             }
         });
         if (updated) {
             this.notifyPropertyChange('_sprites');
         } else {
-            var dict = {}
-            if (scrapelyData != null){
-                dict = {
-                    name: text,
-                    scrapelyData: scrapelyData[0],
-                    element: element,
-                    highlight: false,
-                    fillColor: options.fillColor || this.get('fillColor'),
-                    strokeColor: options.strokeColor || this.get('strokeColor'),
-                    textColor: options.textColor || this.get('textColor')
-                }
-            }else{
-                dict = {
-                    name: text,
-                    element: element,
-                    highlight: false,
-                    fillColor: options.fillColor || this.get('fillColor'),
-                    strokeColor: options.strokeColor || this.get('strokeColor'),
-                    textColor: options.textColor || this.get('textColor')
-                }
-            }
-            this.get('_sprites').pushObject(Ember.Object.create(dict));
+            this.get('_sprites').pushObject(Ember.Object.create({
+                name: text,
+                element: element,
+                highlight: false,
+                fillColor: options.fillColor || this.get('fillColor'),
+                strokeColor: options.strokeColor || this.get('strokeColor'),
+                textColor: options.textColor || this.get('textColor')
+            }));
         }
     },
 
