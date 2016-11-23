@@ -47,7 +47,7 @@ export default Ember.Object.extend({
         });
     }.property('_sprites.@each', '_ignores.@each'),
 
-    addSprite: function(element, text, scrapelyData, options={}) {
+    addSprite: function(element, text, scrapelyData=null, options={}) {
         var updated = false;
         this.get('_sprites').forEach(function(sprite) {
             if (Ember.$(sprite.element).get(0) === element) {
