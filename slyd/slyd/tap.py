@@ -45,6 +45,7 @@ def create_root(config, settings_module):
     from .projectspec import create_project_resource
     from slyd.api import APIResource
     from slyd.bot import create_bot_resource
+    from slyd.scrapelyd import create_scrapelyd_resource
     from slyd.projects import create_projects_manager_resource
 
     from slyd.splash.ferry import (FerryServerProtocol, FerryServerFactory,
@@ -81,7 +82,7 @@ def create_root(config, settings_module):
 
     # add crawler at /projects/PROJECT_ID/bot
     projects.putChild('bot', create_bot_resource(spec_manager))
-
+    projects.putChild('scrapely', create_scrapelyd_resource(spec_manager))
     # add project spec at /projects/PROJECT_ID/spec
     spec = create_project_resource(spec_manager)
     projects.putChild('spec', spec)
