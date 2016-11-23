@@ -6576,8 +6576,12 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             return this.get('showItems') ? "Hide Items " : "Show Items";
         }).property('showItems'),
 
+        //    testButtonLabel: function() {
+        //        return this.get('testing') ? "Stop testing" : "Test spider";
+        //    }.property('testing'),
+
         testButtonLabel: (function () {
-            return this.get('testing') ? "Stop testing" : "Test spider";
+            return this.get('testing') ? "Stop training" : "Train scrapely";
         }).property('testing'),
 
         links_to_follow: (function (key, follow) {
@@ -6816,6 +6820,23 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             });
         },
 
+        trainScrapely: function trainScrapely() {
+            var _this4 = this;
+
+            var result = null;
+
+            this.get('documentView').hideLoading();
+            this.set('testing', false);
+            this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
+
+            result = this.get('slyd').trainScrapely(this.get('model.name')).then(function () {
+                _this4.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+            })['catch'](function (err) {
+                throw err;
+            });
+            return result;
+        },
+
         reload: function reload() {
             // TODO: This resets the baseurl the page was loaded with (if it was set)
             this.loadUrl(this.get('documentView.currentUrl'));
@@ -6982,6 +7003,19 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
                 }
             },
 
+            trainScrapely: function trainScrapely() {
+                if (this.get('testing')) {
+                    this.get('pendingUrls').clear();
+                } else {
+                    this.set('testing', true);
+                    this.get('documentView').showLoading();
+                    this.get('extractedItems').clear();
+                    this.set('showItems', true);
+                    this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
+                    this.trainScrapely();
+                }
+            },
+
             updateLoginInfo: function updateLoginInfo() {
                 Ember['default'].run.once(this, 'saveSpider');
             },
@@ -7042,7 +7076,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         _willEnter: function _willEnter() {
-            var _this4 = this;
+            var _this5 = this;
 
             // willEnter spider.index controller
             this.get('extractedItems').setObjects([]);
@@ -7054,10 +7088,10 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             });
             this.get('browseHistory').clear();
             Ember['default'].run.next(function () {
-                if (_this4.get('url')) {
-                    _this4.loadUrl(_this4.get('url'), _this4.get('baseurl'));
-                    _this4.set('url', null);
-                    _this4.set('baseurl', null);
+                if (_this5.get('url')) {
+                    _this5.loadUrl(_this5.get('url'), _this5.get('baseurl'));
+                    _this5.set('url', null);
+                    _this5.set('baseurl', null);
                 }
             });
         },
@@ -8053,9 +8087,10 @@ define('portia-web/initializers/bread-crumbs', ['exports'], function (exports) {
 
   exports['default'] = {
     name: "ember-breadcrumbs",
-    initialize: function initialize(container, app) {
-      app.inject("component:bread-crumbs", "router", "router:main");
-      app.inject("component:bread-crumbs", "applicationController", "controller:application");
+    initialize: function initialize() {
+      var application = arguments[1] || arguments[0];
+      application.inject("component:bread-crumbs", "router", "router:main");
+      application.inject("component:bread-crumbs", "applicationController", "controller:application");
     }
   };
 
@@ -8148,6 +8183,18 @@ define('portia-web/initializers/export-application-global', ['exports', 'ember',
   function initialize() {
     var application = arguments[1] || arguments[0];
     if (config['default'].exportApplicationGlobal !== false) {
+      var theGlobal;
+      if (typeof window !== 'undefined') {
+        theGlobal = window;
+      } else if (typeof global !== 'undefined') {
+        theGlobal = global;
+      } else if (typeof self !== 'undefined') {
+        theGlobal = self;
+      } else {
+        // no reasonable global, just bail
+        return;
+      }
+
       var value = config['default'].exportApplicationGlobal;
       var globalName;
 
@@ -8157,13 +8204,13 @@ define('portia-web/initializers/export-application-global', ['exports', 'ember',
         globalName = Ember['default'].String.classify(config['default'].modulePrefix);
       }
 
-      if (!window[globalName]) {
-        window[globalName] = application;
+      if (!theGlobal[globalName]) {
+        theGlobal[globalName] = application;
 
         application.reopen({
           willDestroy: function willDestroy() {
             this._super.apply(this, arguments);
-            delete window[globalName];
+            delete theGlobal[globalName];
           }
         });
       }
@@ -9693,7 +9740,7 @@ define('portia-web/routes/project/index', ['exports', 'portia-web/routes/base-ro
                 this.get('slyd').hasTag(this.get('slyd.project'), 'portia_2.0').then((function (hasTag) {
                     this.set('slyd.hasPortia2', hasTag.status);
                 }).bind(this));
-                this.get('slyd').changedFiles(this.get('slyd.project')).then(function (changes) {
+                return this.get('slyd').changedFiles(this.get('slyd.project')).then(function (changes) {
                     controller.set('changedFiles', changes);
                 });
             }
@@ -21808,6 +21855,10 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
         dom.appendChild(el0, el1);
         var el1 = dom.createTextNode("\n");
         dom.appendChild(el0, el1);
+        var el1 = dom.createComment("\n<div class=\"btn-center\">\n{{#bs-button clicked=\"testSpider\" clickedParam=this icon=\"fa fa-icon fa-check\" type=\"primary\" title=\"Tests the spider on every start URL.\"}}\n			{{controller.testButtonLabel}}\n		{{/bs-button}}</div>\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n\n");
+        dom.appendChild(el0, el1);
         var el1 = dom.createElement("div");
         dom.setAttribute(el1,"class","btn-center");
         var el2 = dom.createTextNode("\n");
@@ -21841,10 +21892,10 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
         }
         var morph0 = dom.createMorphAt(dom.childAt(fragment, [1]),1,1);
         var morph1 = dom.createMorphAt(fragment,3,3,contextualElement);
-        var morph2 = dom.createMorphAt(dom.childAt(fragment, [5]),1,1);
+        var morph2 = dom.createMorphAt(dom.childAt(fragment, [7]),1,1);
         block(env, morph0, context, "if", [get(env, context, "capabilities.rename_spiders")], {}, child0, child1);
         block(env, morph1, context, "closable-accordion", [], {"configName": "bs", "selected-idx": 0}, child2, null);
-        block(env, morph2, context, "bs-button", [], {"clicked": "testSpider", "clickedParam": get(env, context, "this"), "icon": "fa fa-icon fa-check", "type": "primary", "title": "Tests the spider on every start URL."}, child3, null);
+        block(env, morph2, context, "bs-button", [], {"clicked": "trainScrapely", "clickedParam": get(env, context, "this"), "icon": "fa fa-icon fa-check", "type": "primary", "title": "Train scrapely using all templates."}, child3, null);
         return fragment;
       }
     };
@@ -24447,6 +24498,4988 @@ define('portia-web/templates/template/topbar', ['exports'], function (exports) {
   }()));
 
 });
+define('portia-web/tests/acceptance/edit-items-test', ['portia-web/tests/helpers/acceptance-test', 'ember', 'portia-web/tests/helpers/fixtures', 'portia-web/tests/helpers/websocket-mock', 'portia-web/tests/helpers/wait'], function (acceptanceTest, Ember, fixtures, ws, wait) {
+
+  'use strict';
+
+  module('Acceptance | Edit Items', {});
+
+  var save = 'button:contains("Save changes")';
+  var add_item = 'button:contains("Item") .fa-plus';
+  var inline_field = '.form-control.input-sm';
+
+  acceptanceTest['default']('Edit Items', function (app, assert) {
+
+    var reset = function reset() {
+      return visit('/projects/11/items');
+    };
+
+    function getItemNames() {
+      return Object.values(ws['default'].lastMessage.items).map(function (item) {
+        return item.display_name;
+      }).sort();
+    }
+
+    return reset().then(function () {
+      return wait.waitForElement(save);
+    }).then(function () {
+      return click(save);
+    }).then(function () {
+      var saveMeta = ws['default'].lastMessage._meta;
+      equal([saveMeta.project, saveMeta.type].join('/'), '11/items');
+      deepEqual(Object.keys(ws['default'].lastMessage.items), ['default']);
+      return reset();
+    }).then(function () {
+      return click(add_item);
+    }).then(function () {
+      return click('.editable-name:contains("Item: New"):eq(0)');
+    }).then(function () {
+      return fillIn(inline_field, 'foobar');
+    }).then(function () {
+      return triggerEvent(inline_field, 'blur');
+    }).then(function () {
+      return click(save);
+    }).then(function () {
+      deepEqual(getItemNames(), ['default_item', 'foobar']);
+    }).then(reset).then(function () {
+      return click('.editable-item-container:contains("Item: foobar") .fa-trash:eq(0)');
+    }).then(function () {
+      return click('.editable-name:contains("optional")');
+    }).then(function () {
+      return fillIn(inline_field, 'url');
+    }).then(function () {
+      return triggerEvent(inline_field, 'blur');
+    }).then(function () {
+      ok($(inline_field).length, "Can't name a field 'url'");
+      ok(app.lastNotification.message, 'Shows a message explaining');
+      app.lastNotification = null;
+    }).then(function () {
+      return fillIn(inline_field, '_foobar');
+    }).then(function () {
+      return triggerEvent(inline_field, 'blur');
+    }).then(function () {
+      ok($(inline_field).length, "Can't start a field with underscore");
+      ok(app.lastNotification.message, 'Shows a message explaining');
+      app.lastNotification = null;
+    }).then(function () {
+      return fillIn(inline_field, 'price');
+    }).then(function () {
+      return triggerEvent(inline_field, 'blur');
+    }).then(function () {
+      ok($(inline_field).length, "Can't name two fields the same");
+      ok(app.lastNotification.message, 'Shows a message explaining');
+      app.lastNotification = null;
+    }).then(function () {
+      return fillIn(inline_field, 'foobar');
+    }).then(function () {
+      return triggerEvent(inline_field, 'blur');
+    }).then(function () {
+      ok($(inline_field).length === 0, "Works when valid name");
+      ok(!app.lastNotification, "Doesn't show notification when valid name");
+      return click(save);
+    }).then(reset).then(function () {
+      return click('.editable-name:contains("foobar")');
+    }).then(function () {
+      return fillIn(inline_field, 'optional');
+    }).then(function () {
+      return triggerEvent(inline_field, 'blur');
+    }).then(function () {
+      return click(save);
+    });
+  });
+
+});
+define('portia-web/tests/acceptance/edit-items-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - acceptance');
+  test('acceptance/edit-items-test.js should pass jshint', function() { 
+    ok(true, 'acceptance/edit-items-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/acceptance/open-project-test', ['portia-web/tests/helpers/acceptance-test', 'ember'], function (acceptanceTest, Ember) {
+
+  'use strict';
+
+
+  module('Acceptance | Open Projects', {});
+
+  acceptanceTest['default']('Open a project', function (app, assert) {
+    return visit('/').then(function () {
+      equal(currentURL(), '/projects');
+      var projectLinks = find('.clickable-url button');
+      equal(projectLinks.length, 2, 'There are two projects');
+      return click(projectLinks[0]);
+    }).then(function () {
+      equal(currentURL(), '/projects/11');
+    });
+  });
+
+});
+define('portia-web/tests/acceptance/open-project-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - acceptance');
+  test('acceptance/open-project-test.js should pass jshint', function() { 
+    ok(true, 'acceptance/open-project-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/acceptance/spider-test', ['portia-web/tests/helpers/acceptance-test', 'ember', 'portia-web/tests/helpers/fixtures', 'portia-web/tests/helpers/websocket-mock'], function (acceptanceTest, Ember, fixtures, ws) {
+
+  'use strict';
+
+
+  module('Acceptance | Spider', {});
+
+  acceptanceTest['default']('List spiders', function (app, assert) {
+    function getSpiders() {
+      return find('.clickable-url button').map(function (i, elm) {
+        return $(elm).text().trim();
+      }).toArray().sort();
+    }
+
+    return visit('/projects/11').then(function () {
+      equal(currentURL(), '/projects/11');
+
+      var spiderLinks = find('.clickable-url button');
+      equal(spiderLinks.length, 2, 'There are two spiders');
+      deepEqual(getSpiders(), ['spider1', 'spider2']);
+      return fillIn('#toolbox .ember-text-field', 'pider1');
+    }).then(function () {
+      deepEqual(getSpiders(), ['spider1']);
+      return fillIn('#toolbox .ember-text-field', 'ider2');
+    }).then(function () {
+      deepEqual(getSpiders(), ['spider2']);
+      return fillIn('#toolbox .ember-text-field', 'spider');
+    }).then(function () {
+      deepEqual(getSpiders(), ['spider1', 'spider2']);
+      return fillIn('#toolbox .ember-text-field', 'testtesttest');
+    }).then(function () {
+      deepEqual(getSpiders(), []);
+      return fillIn('#toolbox .ember-text-field', '');
+    }).then(function () {
+      return click(find('button.btn-danger .fa-trash'));
+    }).then(function () {
+      equal(find('.modal-body').length, 1);
+      ok(/Are you sure/.test(find('.modal-body').text()));
+      return click(find('.modal-footer .btn-default'));
+    }).then(function () {
+      deepEqual(getSpiders(), ['spider1', 'spider2']);
+    });
+  });
+
+  acceptanceTest['default']('Initialization Panel', function (app, assert) {
+
+    function $initPanel() {
+      return find('.panel:eq(0)');
+    }
+
+    function getStartUrls() {
+      return $initPanel().find('.clickable-url button').map(function (i, elm) {
+        return $(elm).text().trim();
+      }).toArray();
+    }
+
+    return visit('/projects/11').then(function () {
+      return visit('/projects/11/spider1');
+    }).then(function () {
+      equal(currentURL(), '/projects/11/spider1');
+      equal(find('.nav-container .current-crumb').text().trim(), 'spider1');
+      deepEqual(getStartUrls(), ['http://portiatest.com/'], 'Fixture loaded OK');
+      ok($initPanel().find('button .fa-plus').parent()[0].hasAttribute('disabled'), 'Add urls button should be disabled if textarea is empty');
+      return fillIn($initPanel().find('textarea'), '\nhttp://url1.com\n\nurl2.com\n\n');
+    }).then(function () {
+      ok(!$initPanel().find('button .fa-plus').parent()[0].hasAttribute('disabled'), 'Add urls button should be enabled if user has types urls');
+      return click($initPanel().find('button .fa-plus'));
+    }).then(function () {
+      equal(getStartUrls().join(':'), 'http://portiatest.com/:http://url1.com/:http://url2.com/', 'asd');
+      deepEqual(getStartUrls(), ['http://portiatest.com/', 'http://url1.com/', 'http://url2.com/'], 'asd');
+      var meta = ws['default'].lastMessage._meta;
+      equal([meta.project, meta.type, meta.spider].join('/'), "11/spider/spider1");
+      deepEqual(ws['default'].lastMessage.spider.start_urls, ['http://portiatest.com/', 'http://url1.com/', 'http://url2.com/']);
+      return click($initPanel().find('.btn-danger .fa-trash').eq(1));
+    }).then(function () {
+      deepEqual(getStartUrls(), ['http://portiatest.com/', 'http://url2.com/']);
+      deepEqual(ws['default'].lastMessage.spider.start_urls, ['http://portiatest.com/', 'http://url2.com/']);
+      return click($initPanel().find('.btn-danger .fa-trash').eq(0));
+    }).then(function () {
+      deepEqual(getStartUrls(), ['http://url2.com/']);
+      deepEqual(ws['default'].lastMessage.spider.start_urls, ['http://url2.com/']);
+      return click($initPanel().find('button:contains("Edit All")'));
+    }).then(function () {
+      equal($initPanel().find('textarea').val().trim(), 'http://url2.com/');
+      return fillIn($initPanel().find('textarea'), '\nhttp://portiatest.com/\n\n');
+    }).then(function () {
+      return click($initPanel().find('button .fa-plus'));
+    }).then(function () {
+      deepEqual(getStartUrls(), ['http://portiatest.com/'], 'Edit all works');
+      return click($initPanel().find('button:contains("Edit All")'));
+    }).then(function () {
+      equal($initPanel().find('textarea').val().trim(), 'http://portiatest.com/', 'Text area is pre populated when editing all');
+      return fillIn($initPanel().find('textarea'), 'http://asdasdasdad.com');
+    }).then(function () {
+      return click($initPanel().find('button:contains("cancel")'));
+    }).then(function () {
+      deepEqual(getStartUrls(), ['http://portiatest.com/'], "Cancelling doesn't change the urls");
+    });
+  });
+
+});
+define('portia-web/tests/acceptance/spider-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - acceptance');
+  test('acceptance/spider-test.js should pass jshint', function() { 
+    ok(true, 'acceptance/spider-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/acceptance/web-document-test', ['portia-web/tests/helpers/acceptance-test', 'ember', 'portia-web/tests/helpers/fixtures', 'portia-web/tests/helpers/websocket-mock', 'portia-web/tests/helpers/wait'], function (acceptanceTest, Ember, fixtures, ws, wait) {
+
+    'use strict';
+
+    function waitForLoad() {
+        return wait.waitFor(function () {
+            return !/Loading page/.test($('.url').text());
+        });
+    }
+
+    function baseSplashRenderTest(name, url, fn) {
+        acceptanceTest['default']("Splash Web Document " + name, function (app) {
+            var _this = this,
+                _arguments = arguments;
+
+            return visit('/').then(function () {
+                return visit('/projects/11');
+            }).then(function () {
+                return visit('/projects/11/spider1');
+            }).then(function () {
+                return equal(currentURL(), '/projects/11/spider1');
+            }).then(function () {
+                return wait.waitForElement('#scraped-doc-iframe');
+            }).then(function () {
+                equal(2, $('#scraped-doc-iframe').length + 1, 'Has iframe');
+            }).then(function () {
+                return wait.waitFor(function () {
+                    var docView = app.registry.registrations['document:obj'].view;
+                    return docView.get('mode') === 'browse';
+                });
+            }).then(function () {
+                var docView = app.registry.registrations['document:obj'].view;
+                docView.loadUrl(url);
+            }).then(function () {
+                return waitForLoad();
+            }).then(function () {
+                return wait.timeout(1000);
+            }).then(function () {
+                return fn.call(_this, _arguments);
+            });
+        });
+    }
+
+    /**
+     * get attributes as dictionary
+     */
+    function getAttributes(el) {
+        var res = {};
+        for (var i = 0, len = el.attributes.length; i < len; i++) {
+            res[el.attributes[i].name] = el.attributes[i].value;
+        }
+        return res;
+    }
+
+    function domEqual(dom1, dom2, path) {
+        path = path || ':root';
+        if (!dom1 || !dom2) {
+            return equal(dom1, dom2, path + ' Both null');
+        }
+        equal(dom1.nodeType, dom2.nodeType, path + ' nodeType');
+
+        if (dom1.nodeType === window.Node.TEXT_NODE) {
+            equal(dom1.nodeValue, dom2.nodeValue, path + ' nodeValue');
+        } else if (dom1.nodeType === window.Node.ELEMENT_NODE) {
+            equal(dom1.tagName, dom2.tagName, path + ' tagName');
+            equal(dom1.children.length, dom2.children.length, path + ' child count');
+            equal(dom1.attributes.length, dom2.attributes.length, path + ' attr count');
+            deepEqual(getAttributes(dom1), getAttributes(dom2), path + ' attributes');
+            for (var i = 0, len = dom1.children.length; i < len; i++) {
+                domEqual(dom1.children[i], dom2.children[i], path + '>' + dom1.children[i].tagName);
+            }
+        } else if (dom1.nodeType === window.Node.DOCUMENT_NODE) {
+            domEqual(dom1.documentElement, dom2.documentElement, path);
+        }
+    }
+
+    function domTest(file) {
+        var url = location.origin + '/testresources/' + file;
+        baseSplashRenderTest("DOMeq " + file, url, function () {
+
+            var directDefer = Ember['default'].RSVP.defer();
+            var $direct = $('<iframe/>').on('load', function () {
+                setTimeout(directDefer.resolve, 30);
+            }).attr('src', url).appendTo(document.body);
+
+            return directDefer.promise.then(function () {
+                var splash = $('#scraped-doc-iframe').contents();
+                var direct = $direct.contents();
+
+                // Attribute blacklist
+                ['data-tagid', 'href', 'src'].forEach(function (attr) {
+                    splash.find('[' + attr + ']').removeAttr(attr);
+                    direct.find('[' + attr + ']').removeAttr(attr);
+                });
+
+                // Tag blacklist
+                ['script', 'noscript'].forEach(function (tag) {
+                    direct.find(tag).remove();
+                    splash.find(tag).remove();
+                });
+
+                equal(splash.length, 1);
+                equal(direct.length, 1);
+                domEqual(splash[0], direct[0]);
+
+                var bgcolortest = splash.find('.testbgcolor');
+                if (bgcolortest.length) {
+                    equal(bgcolortest.css('background-color'), direct.find('.testbgcolor').css('background-color'));
+                }
+                $direct.remove();
+            });
+        });
+    }
+
+    module('Acceptance | Web document', {});
+
+    domTest('style-tag.html');
+    domTest('dom-change-nodevalue.html');
+    domTest('dom-add-node.html');
+    domTest('dom-remove-node.html');
+    domTest('unicode-characters.html');
+    domTest('overwrite-natives-json.html');
+    domTest('overwrite-natives-json-strigify.html');
+    domTest('overwrite-natives-tojson.html');
+    // domTest('overwrite-natives-array.html'); // Broken, mutation summary and company use overwritten array prototypes
+    domTest('import-data-url.html');
+    domTest('external-css.html');
+    domTest('external-import-css.html');
+    domTest('inline-style.html');
+
+});
+define('portia-web/tests/acceptance/web-document-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - acceptance');
+  test('acceptance/web-document-test.js should pass jshint', function() { 
+    ok(true, 'acceptance/web-document-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/app.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - .');
+  test('app.js should pass jshint', function() { 
+    ok(true, 'app.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/accordion-item.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/accordion-item.js should pass jshint', function() { 
+    ok(true, 'components/accordion-item.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/annotations-plugin/component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components/annotations-plugin');
+  test('components/annotations-plugin/component.js should pass jshint', function() { 
+    ok(true, 'components/annotations-plugin/component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-badge.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-badge.js should pass jshint', function() { 
+    ok(true, 'components/bs-badge.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-button.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-button.js should pass jshint', function() { 
+    ok(true, 'components/bs-button.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-dropdown.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-dropdown.js should pass jshint', function() { 
+    ok(true, 'components/bs-dropdown.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-label.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-label.js should pass jshint', function() { 
+    ok(true, 'components/bs-label.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-message.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-message.js should pass jshint', function() { 
+    ok(true, 'components/bs-message.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-modal.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-modal.js should pass jshint', function() { 
+    ok(true, 'components/bs-modal.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/bs-notifications.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/bs-notifications.js should pass jshint', function() { 
+    ok(true, 'components/bs-notifications.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/check-box.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/check-box.js should pass jshint', function() { 
+    ok(true, 'components/check-box.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/closable-accordion.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/closable-accordion.js should pass jshint', function() { 
+    ok(true, 'components/closable-accordion.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/collapsible-text.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/collapsible-text.js should pass jshint', function() { 
+    ok(true, 'components/collapsible-text.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/copy-clipboard.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/copy-clipboard.js should pass jshint', function() { 
+    ok(true, 'components/copy-clipboard.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/copy-spider/component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components/copy-spider');
+  test('components/copy-spider/component.js should pass jshint', function() { 
+    ok(true, 'components/copy-spider/component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/display-button-edit-delete.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/display-button-edit-delete.js should pass jshint', function() { 
+    ok(true, 'components/display-button-edit-delete.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/draggable-button.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/draggable-button.js should pass jshint', function() { 
+    ok(true, 'components/draggable-button.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/dummy-component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/dummy-component.js should pass jshint', function() { 
+    ok(true, 'components/dummy-component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/edit-item.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/edit-item.js should pass jshint', function() { 
+    ok(true, 'components/edit-item.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/edit-items/component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components/edit-items');
+  test('components/edit-items/component.js should pass jshint', function() { 
+    ok(true, 'components/edit-items/component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/extracted-item.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/extracted-item.js should pass jshint', function() { 
+    ok(true, 'components/extracted-item.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/extractor-dropzone.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/extractor-dropzone.js should pass jshint', function() { 
+    ok(true, 'components/extractor-dropzone.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/file-download/component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components/file-download');
+  test('components/file-download/component.js should pass jshint', function() { 
+    ok(true, 'components/file-download/component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/inline-editable-text-field.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/inline-editable-text-field.js should pass jshint', function() { 
+    ok(true, 'components/inline-editable-text-field.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/inline-help.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/inline-help.js should pass jshint', function() { 
+    ok(true, 'components/inline-help.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/item-select.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/item-select.js should pass jshint', function() { 
+    ok(true, 'components/item-select.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/j-breadcrumb.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/j-breadcrumb.js should pass jshint', function() { 
+    ok(true, 'components/j-breadcrumb.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/j-breadcrumbs.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/j-breadcrumbs.js should pass jshint', function() { 
+    ok(true, 'components/j-breadcrumbs.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/json-file-compare.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/json-file-compare.js should pass jshint', function() { 
+    ok(true, 'components/json-file-compare.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/label-with-tooltip.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/label-with-tooltip.js should pass jshint', function() { 
+    ok(true, 'components/label-with-tooltip.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/page-actions-editor.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/page-actions-editor.js should pass jshint', function() { 
+    ok(true, 'components/page-actions-editor.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/pin-toolbox-button.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/pin-toolbox-button.js should pass jshint', function() { 
+    ok(true, 'components/pin-toolbox-button.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/regex-text-field-with-button/component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components/regex-text-field-with-button');
+  test('components/regex-text-field-with-button/component.js should pass jshint', function() { 
+    ok(true, 'components/regex-text-field-with-button/component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/reorder-handler.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/reorder-handler.js should pass jshint', function() { 
+    ok(true, 'components/reorder-handler.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/reorderable-list.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/reorderable-list.js should pass jshint', function() { 
+    ok(true, 'components/reorderable-list.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/text-area-with-button.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/text-area-with-button.js should pass jshint', function() { 
+    ok(true, 'components/text-area-with-button.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/text-area.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/text-area.js should pass jshint', function() { 
+    ok(true, 'components/text-area.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/text-field-dropdown-button.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/text-field-dropdown-button.js should pass jshint', function() { 
+    ok(true, 'components/text-field-dropdown-button.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/text-field-with-button.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/text-field-with-button.js should pass jshint', function() { 
+    ok(true, 'components/text-field-with-button.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/text-field.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/text-field.js should pass jshint', function() { 
+    ok(true, 'components/text-field.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/tool-box.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/tool-box.js should pass jshint', function() { 
+    ok(true, 'components/tool-box.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/top-bar.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/top-bar.js should pass jshint', function() { 
+    ok(true, 'components/top-bar.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/web-document-js/component.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components/web-document-js');
+  test('components/web-document-js/component.js should pass jshint', function() { 
+    ok(true, 'components/web-document-js/component.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/web-document.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/web-document.js should pass jshint', function() { 
+    ok(true, 'components/web-document.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/components/wizard-box.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - components');
+  test('components/wizard-box.js should pass jshint', function() { 
+    ok(true, 'components/wizard-box.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/application.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/application.js should pass jshint', function() { 
+    ok(true, 'controllers/application.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/base-controller.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/base-controller.js should pass jshint', function() { 
+    ok(true, 'controllers/base-controller.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/conflicts.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/conflicts.js should pass jshint', function() { 
+    ok(true, 'controllers/conflicts.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/conflicts/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers/conflicts');
+  test('controllers/conflicts/index.js should pass jshint', function() { 
+    ok(true, 'controllers/conflicts/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/experiments.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/experiments.js should pass jshint', function() { 
+    ok(true, 'controllers/experiments.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/items.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/items.js should pass jshint', function() { 
+    ok(true, 'controllers/items.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/project.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/project.js should pass jshint', function() { 
+    ok(true, 'controllers/project.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/project/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers/project');
+  test('controllers/project/index.js should pass jshint', function() { 
+    ok(true, 'controllers/project/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/projects.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/projects.js should pass jshint', function() { 
+    ok(true, 'controllers/projects.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/projects/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers/projects');
+  test('controllers/projects/index.js should pass jshint', function() { 
+    ok(true, 'controllers/projects/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/spider.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/spider.js should pass jshint', function() { 
+    ok(true, 'controllers/spider.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/spider/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers/spider');
+  test('controllers/spider/index.js should pass jshint', function() { 
+    ok(true, 'controllers/spider/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/template-items.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/template-items.js should pass jshint', function() { 
+    ok(true, 'controllers/template-items.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/template.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers');
+  test('controllers/template.js should pass jshint', function() { 
+    ok(true, 'controllers/template.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/controllers/template/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - controllers/template');
+  test('controllers/template/index.js should pass jshint', function() { 
+    ok(true, 'controllers/template/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/dummy/app/app', ['exports', 'ember', 'ember/resolver', 'ember/load-initializers', 'portia-web/tests/dummy/app/config/environment'], function (exports, Ember, Resolver, loadInitializers, config) {
+
+  'use strict';
+
+  Ember['default'].MODEL_FACTORY_INJECTIONS = true;
+
+  var App = Ember['default'].Application.extend({
+    modulePrefix: config['default'].modulePrefix,
+    podModulePrefix: config['default'].podModulePrefix,
+    Resolver: Resolver['default']
+  });
+
+  loadInitializers['default'](App, config['default'].modulePrefix);
+
+  exports['default'] = App;
+
+});
+define('portia-web/tests/dummy/app/app.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - dummy/app');
+  test('dummy/app/app.js should pass jshint', function() { 
+    ok(true, 'dummy/app/app.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/dummy/app/router', ['exports', 'ember', 'portia-web/tests/dummy/app/config/environment'], function (exports, Ember, config) {
+
+  'use strict';
+
+  var Router = Ember['default'].Router.extend({
+    location: config['default'].locationType
+  });
+
+  Router.map(function () {});
+
+  exports['default'] = Router;
+
+});
+define('portia-web/tests/dummy/app/router.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - dummy/app');
+  test('dummy/app/router.js should pass jshint', function() { 
+    ok(true, 'dummy/app/router.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/dummy/config/environment', function () {
+
+  'use strict';
+
+  /* jshint node: true */
+
+  module.exports = function (environment) {
+    var ENV = {
+      modulePrefix: 'dummy',
+      environment: environment,
+      baseURL: '/',
+      locationType: 'auto',
+      EmberENV: {
+        FEATURES: {
+          // Here you can enable experimental features on an ember canary build
+          // e.g. 'with-controller': true
+        }
+      },
+
+      APP: {
+        // Here you can pass flags/options to your application instance
+        // when it is created
+      }
+    };
+
+    if (environment === 'development') {
+      // ENV.APP.LOG_RESOLVER = true;
+      // ENV.APP.LOG_ACTIVE_GENERATION = true;
+      // ENV.APP.LOG_TRANSITIONS = true;
+      // ENV.APP.LOG_TRANSITIONS_INTERNAL = true;
+      // ENV.APP.LOG_VIEW_LOOKUPS = true;
+    }
+
+    if (environment === 'test') {
+      // Testem prefers this...
+      ENV.baseURL = '/';
+      ENV.locationType = 'none';
+
+      // keep test console output quieter
+      ENV.APP.LOG_ACTIVE_GENERATION = false;
+      ENV.APP.LOG_VIEW_LOOKUPS = false;
+
+      ENV.APP.rootElement = '#ember-testing';
+    }
+
+    if (environment === 'production') {}
+
+    return ENV;
+  };
+
+});
+define('portia-web/tests/dummy/config/environment.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - dummy/config');
+  test('dummy/config/environment.js should pass jshint', function() { 
+    ok(true, 'dummy/config/environment.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/acceptance-test', ['exports', 'ember', 'portia-web/tests/helpers/start-app', 'portia-web/components/web-document-js/component', 'portia-web/utils/ferry-websocket', 'portia-web/utils/canvas', 'portia-web/tests/helpers/fixtures', 'portia-web/utils/notification-manager', 'portia-web/tests/helpers/websocket-mock', 'portia-web/tests/helpers/wait'], function (exports, Ember, startApp, WebDocument, FerryWebsocket, utils__canvas, fixtures, NotificationManager, ws, wait) {
+
+    'use strict';
+
+
+
+    exports['default'] = portiaTest;
+    var oldSend = FerryWebsocket['default'].create().send;
+    FerryWebsocket['default'].reopen({
+        url: 'ws://localhost:8787/ws',
+        send: function send(msg) {
+            if (msg._command && !/(resize|heartbeat|pause|resume)/.test(msg._command)) {
+                ws['default'].lastMessage = msg;
+            }
+            return oldSend.apply(this, arguments);
+        }
+    });
+
+    Ember['default'].assert = function (m, a) {
+        if (!a) {
+            try {
+                throw new Error();
+            } catch (e) {
+                m += e.stack;
+            }
+            throw new Error(m);
+        }
+    };
+    function portiaTest(name, fn) {
+        test(name, function (assert) {
+            fixtures.lastRequest.clear();
+            var root = $('<div/>').appendTo(document.body);
+            var canvas = $('<canvas/>').attr('id', 'testCanvas_' + Date.now()).appendTo(document.body);
+
+            NotificationManager['default'].reopen({
+                add: function add(obj) {
+                    if (app) app.lastNotification = obj;
+                }
+            });
+
+            var app = startApp['default']({
+                rootElement: root[0],
+                LOG_TRANSITIONS: true, // basic logging of successful transitions
+                LOG_TRANSITIONS_INTERNAL: true // detailed logging of all routing steps
+            });
+            var that = this;
+            Ember['default'].run(function () {
+                app.setupForTesting();
+                app.injectTestHelpers();
+                Ember['default'].Test.adapter.asyncStart();
+
+                visit('/').then(function () {
+                    return wait.waitFor(function () {
+                        var doc = app.registry.resolve('document:obj');
+                        return doc && doc.view && doc.view.ws.get('opened');
+                    }, 'ws open');
+                }).then(function () {
+                    return fn.call(that, app, assert);
+                }).then(function () {
+                    var doc = app.registry.resolve('document:obj');
+                    if (doc && doc.view && doc.view.ws) {
+                        doc.view.ws.set('deferreds', {});
+                        doc.view.ws.close();
+                    }
+                    app.destroy();
+                    root.remove();
+                    canvas.remove();
+                    Ember['default'].Test.adapter.asyncEnd();
+                });
+            });
+        });
+    }
+
+});
+define('portia-web/tests/helpers/acceptance-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/acceptance-test.js should pass jshint', function() { 
+    ok(true, 'helpers/acceptance-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/fixtures', ['exports', 'portia-web/config/environment', 'ember'], function (exports, config, Ember) {
+
+    'use strict';
+
+    var fixtures = {};
+
+    var lastRequest = {
+        method: null,
+        url: null,
+        data: null,
+        captured: [],
+
+        clear: function clear() {
+            this.url = null;
+            this.method = null;
+            this.data = null;
+            this.captured = [];
+        },
+        add: function add(url, method, data) {
+            this.url = url;
+            this.method = method;
+            this.data = data;
+            this.captured.push({ url: url, method: method, data: data });
+        }
+    };
+
+    var oldAjax = Ember['default'].$.ajax;
+    Ember['default'].$.ajax = function (args) {
+        var url = args.url.replace(/^https?:\/\/[^\/]+/, '');
+        var data = args.data && JSON.parse(args.data);
+        lastRequest.add(url, args.type, data);
+
+        return oldAjax(args);
+    };
+
+    exports.fixtures = fixtures;
+    exports.lastRequest = lastRequest;
+
+});
+define('portia-web/tests/helpers/fixtures.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/fixtures.js should pass jshint', function() { 
+    ok(true, 'helpers/fixtures.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/resolver', ['exports', 'ember/resolver', 'portia-web/config/environment'], function (exports, Resolver, config) {
+
+  'use strict';
+
+  var resolver = Resolver['default'].create();
+
+  resolver.namespace = {
+    modulePrefix: config['default'].modulePrefix,
+    podModulePrefix: config['default'].podModulePrefix
+  };
+
+  exports['default'] = resolver;
+
+});
+define('portia-web/tests/helpers/resolver.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/resolver.js should pass jshint', function() { 
+    ok(true, 'helpers/resolver.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/start-app', ['exports', 'ember', 'portia-web/app', 'portia-web/router', 'portia-web/config/environment', 'portia-web/tests/helpers/fixtures'], function (exports, Ember, Application, Router, config) {
+
+  'use strict';
+
+
+
+  exports['default'] = startApp;
+  function startApp(attrs) {
+    var application;
+
+    var attributes = Ember['default'].merge({}, config['default'].APP);
+    attributes = Ember['default'].merge(attributes, attrs); // use defaults, but you can override;
+
+    Ember['default'].run(function () {
+      application = Application['default'].create(attributes);
+      application.setupForTesting();
+      application.injectTestHelpers();
+    });
+
+    return application;
+  }
+
+});
+define('portia-web/tests/helpers/start-app.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/start-app.js should pass jshint', function() { 
+    ok(true, 'helpers/start-app.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/trim.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/trim.js should pass jshint', function() { 
+    ok(true, 'helpers/trim.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/wait', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports.waitFor = waitFor;
+    exports.timeout = timeout;
+    exports.waitForElement = waitForElement;
+
+    function waitFor(fn, name, max) {
+        max = max || 8000;
+        name = name || 'unnamed';
+        return new Ember['default'].RSVP.Promise(function (accept, reject) {
+            var start = Date.now();
+            function pool() {
+                if (fn()) {
+                    accept();
+                } else {
+                    if (Date.now() - max > start) {
+                        reject('timeout waiting for ' + name);
+                    } else {
+                        setTimeout(pool, 30);
+                    }
+                }
+            }
+            pool();
+        });
+    }
+
+    function timeout(howmuch) {
+        return new Ember['default'].RSVP.Promise(function (resolve) {
+            setTimeout(resolve, howmuch || 200);
+        });
+    }
+
+    function waitForElement(e) {
+        return waitFor(function () {
+            return $(e).length;
+        }, 'Element ' + e);
+    }
+
+});
+define('portia-web/tests/helpers/wait.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/wait.js should pass jshint', function() { 
+    ok(true, 'helpers/wait.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/helpers/websocket-mock', ['exports'], function (exports) {
+
+    'use strict';
+
+
+    // API for tests to interface with the websocket
+
+    var ws = {
+        lastMessage: null
+    };
+    exports['default'] = ws;
+
+});
+define('portia-web/tests/helpers/websocket-mock.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - helpers');
+  test('helpers/websocket-mock.js should pass jshint', function() { 
+    ok(true, 'helpers/websocket-mock.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/add-prototypes.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/add-prototypes.js should pass jshint', function() { 
+    ok(true, 'initializers/add-prototypes.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/controller-helper.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/controller-helper.js should pass jshint', function() { 
+    ok(true, 'initializers/controller-helper.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/error-handler.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/error-handler.js should pass jshint', function() { 
+    ok(true, 'initializers/error-handler.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/messages.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/messages.js should pass jshint', function() { 
+    ok(true, 'initializers/messages.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/project-models.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/project-models.js should pass jshint', function() { 
+    ok(true, 'initializers/project-models.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/register-api.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/register-api.js should pass jshint', function() { 
+    ok(true, 'initializers/register-api.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/register-modal.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/register-modal.js should pass jshint', function() { 
+    ok(true, 'initializers/register-modal.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/register-page-interaction.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/register-page-interaction.js should pass jshint', function() { 
+    ok(true, 'initializers/register-page-interaction.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/register-websocket.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/register-websocket.js should pass jshint', function() { 
+    ok(true, 'initializers/register-websocket.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/initializers/toolbox.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - initializers');
+  test('initializers/toolbox.js should pass jshint', function() { 
+    ok(true, 'initializers/toolbox.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/conflict-mixin.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/conflict-mixin.js should pass jshint', function() { 
+    ok(true, 'mixins/conflict-mixin.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/controller-utils.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/controller-utils.js should pass jshint', function() { 
+    ok(true, 'mixins/controller-utils.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/draggable.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/draggable.js should pass jshint', function() { 
+    ok(true, 'mixins/draggable.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/droppable.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/droppable.js should pass jshint', function() { 
+    ok(true, 'mixins/droppable.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/guess-types.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/guess-types.js should pass jshint', function() { 
+    ok(true, 'mixins/guess-types.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/modal-handler.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/modal-handler.js should pass jshint', function() { 
+    ok(true, 'mixins/modal-handler.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/notification-handler.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/notification-handler.js should pass jshint', function() { 
+    ok(true, 'mixins/notification-handler.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/popover.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/popover.js should pass jshint', function() { 
+    ok(true, 'mixins/popover.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/mixins/size-listener.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - mixins');
+  test('mixins/size-listener.js should pass jshint', function() { 
+    ok(true, 'mixins/size-listener.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/annotation.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/annotation.js should pass jshint', function() { 
+    ok(true, 'models/annotation.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/attribute.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/attribute.js should pass jshint', function() { 
+    ok(true, 'models/attribute.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/conflict.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/conflict.js should pass jshint', function() { 
+    ok(true, 'models/conflict.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/extracted-field.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/extracted-field.js should pass jshint', function() { 
+    ok(true, 'models/extracted-field.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/extracted-item.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/extracted-item.js should pass jshint', function() { 
+    ok(true, 'models/extracted-item.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/extracted-variant.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/extracted-variant.js should pass jshint', function() { 
+    ok(true, 'models/extracted-variant.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/extractor.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/extractor.js should pass jshint', function() { 
+    ok(true, 'models/extractor.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/ignore.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/ignore.js should pass jshint', function() { 
+    ok(true, 'models/ignore.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/item-field.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/item-field.js should pass jshint', function() { 
+    ok(true, 'models/item-field.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/item.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/item.js should pass jshint', function() { 
+    ok(true, 'models/item.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/mapped-field-data.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/mapped-field-data.js should pass jshint', function() { 
+    ok(true, 'models/mapped-field-data.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/simple-model.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/simple-model.js should pass jshint', function() { 
+    ok(true, 'models/simple-model.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/spider.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/spider.js should pass jshint', function() { 
+    ok(true, 'models/spider.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/models/template.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - models');
+  test('models/template.js should pass jshint', function() { 
+    ok(true, 'models/template.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/router.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - .');
+  test('router.js should pass jshint', function() { 
+    ok(true, 'router.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/base-route.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/base-route.js should pass jshint', function() { 
+    ok(true, 'routes/base-route.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/conflicts.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/conflicts.js should pass jshint', function() { 
+    ok(true, 'routes/conflicts.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/conflicts/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes/conflicts');
+  test('routes/conflicts/index.js should pass jshint', function() { 
+    ok(true, 'routes/conflicts/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/experiments.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/experiments.js should pass jshint', function() { 
+    ok(true, 'routes/experiments.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/index.js should pass jshint', function() { 
+    ok(true, 'routes/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/items.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/items.js should pass jshint', function() { 
+    ok(true, 'routes/items.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/project.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/project.js should pass jshint', function() { 
+    ok(true, 'routes/project.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/project/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes/project');
+  test('routes/project/index.js should pass jshint', function() { 
+    ok(true, 'routes/project/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/projects.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/projects.js should pass jshint', function() { 
+    ok(true, 'routes/projects.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/projects/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes/projects');
+  test('routes/projects/index.js should pass jshint', function() { 
+    ok(true, 'routes/projects/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/spider.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/spider.js should pass jshint', function() { 
+    ok(true, 'routes/spider.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/spider/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes/spider');
+  test('routes/spider/index.js should pass jshint', function() { 
+    ok(true, 'routes/spider/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/template-items.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/template-items.js should pass jshint', function() { 
+    ok(true, 'routes/template-items.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/template.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes');
+  test('routes/template.js should pass jshint', function() { 
+    ok(true, 'routes/template.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/routes/template/index.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - routes/template');
+  test('routes/template/index.js should pass jshint', function() { 
+    ok(true, 'routes/template/index.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/test-helper', ['portia-web/tests/helpers/resolver', 'ember-qunit'], function (resolver, ember_qunit) {
+
+	'use strict';
+
+	ember_qunit.setResolver(resolver['default']);
+
+});
+define('portia-web/tests/test-helper.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - .');
+  test('test-helper.js should pass jshint', function() { 
+    ok(true, 'test-helper.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/annotations-plugin/component-test', ['ember-qunit', 'portia-web/utils/sprite-store'], function (ember_qunit, SpriteStore) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('annotations-plugin', 'AnnotationsPluginComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject({
+      data: {},
+      alldata: [],
+      item: {},
+      createField: "createField",
+      close: "hideFloatingAnnotationWidget",
+      edit: "editAnnotation",
+      document: {
+        iframe: $(),
+        view: {
+          getIframe: function getIframe() {
+            return $();
+          }
+        }
+      },
+      pluginState: {},
+      sprites: new SpriteStore['default'](),
+      extractionFieldTypes: {},
+      updatePluginData: "updatePluginField"
+    });
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/annotations-plugin/component-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components/annotations-plugin');
+  test('unit/components/annotations-plugin/component-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/annotations-plugin/component-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/bs-badge-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('bs-badge', 'BsBadgeComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/bs-badge-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/bs-badge-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/bs-badge-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/bs-button-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('bs-button', 'BsButtonComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/bs-button-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/bs-button-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/bs-button-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/bs-dropdown-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('bs-dropdown', 'BsDropdownComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/bs-dropdown-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/bs-dropdown-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/bs-dropdown-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/bs-label-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('bs-label', 'BsLabelComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/bs-label-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/bs-label-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/bs-label-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/bs-message-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('bs-message', 'BsMessageComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/bs-message-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/bs-message-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/bs-message-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/bs-modal-test', ['ember-qunit', 'portia-web/utils/modal-manager'], function (ember_qunit, ModalManager) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('bs-modal', 'BsModalComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    var manager = new ModalManager['default']();
+    // creates the component instance
+    var component = this.subject({
+      name: 'test modal',
+      ModalManager: manager
+    });
+
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/bs-modal-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/bs-modal-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/bs-modal-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/check-box-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('check-box', 'CheckBoxComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/check-box-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/check-box-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/check-box-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/closable-accordion-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('closable-accordion', 'ClosableAccordionComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:accordion-item']
+  });
+
+  ember_qunit.test('it renders', function () {
+
+    Ember['default'].IdxConfig = {
+      getConfig: function getConfig(configName) {
+        equal(configName, 'bs');
+      }
+    };
+    // creates the component instance
+    var component = this.subject({
+      template: Ember['default'].Handlebars.compile('\n      {{#accordion-item title="item1"}}\n      {{/accordion-item}}\n      {{#accordion-item title="item2"}}\n      {{/accordion-item}}\n    ')
+    });
+
+    component.set('configName', 'bs');
+
+    equal('number', typeof component.get('selected-idx'));
+    equal(0, component.get('selected-idx'));
+
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/closable-accordion-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/closable-accordion-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/closable-accordion-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/collapsible-text-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('collapsible-text', 'CollapsibleTextComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/collapsible-text-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/collapsible-text-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/collapsible-text-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/copy-spider/component-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('copy-spider', 'CopySpiderComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:check-box']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject({
+      data: {},
+      slyd: {
+        getProjectNames: function getProjectNames() {
+          return new Ember['default'].RSVP.Promise(function (resolve, reject) {
+            resolve(['Project 1', 'Project 2']);
+          });
+        },
+        loadItems: function loadItems() {
+          return new Ember['default'].RSVP.Promise(function (resolve, reject) {
+            resolve([]);
+          });
+        },
+        getSpiderNames: function getSpiderNames() {
+          return new Ember['default'].RSVP.Promise(function (resolve, reject) {
+            resolve(['Spider 1', 'Spider 2']);
+          });
+        }
+      }
+    });
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/copy-spider/component-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components/copy-spider');
+  test('unit/components/copy-spider/component-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/copy-spider/component-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/display-button-edit-delete-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('display-button-edit-delete', 'DisplayButtonEditDeleteComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+    needs: ['component:inline-editable-text-field', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/display-button-edit-delete-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/display-button-edit-delete-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/display-button-edit-delete-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/draggable-button-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('draggable-button', 'DraggableButtonComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/draggable-button-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/draggable-button-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/draggable-button-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/edit-item-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('edit-item', 'EditItemComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:inline-editable-text-field', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject({
+      item: Ember['default'].Object.create({})
+    });
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/edit-item-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/edit-item-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/edit-item-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/edit-items/component-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('edit-items', 'Unit | Component | edit items', {
+    // Specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // Creates the component instance
+    var component = this.subject({
+      item: Ember['default'].Object.create({})
+    });
+    equal(component._state, 'preRender');
+
+    // Renders the component to the page
+    this.render();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/edit-items/component-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components/edit-items');
+  test('unit/components/edit-items/component-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/edit-items/component-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/extracted-item-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('extracted-item', 'ExtractedItemComponent', {
+    // specify the other units that are required for this test
+    needs: ['helper:trim']
+  });
+
+  ember_qunit.test('it renders', function () {
+    // Ember 1.11 doesn't seem to load the helper in the tests, but tried with Ember 1.13 and it works
+    var ember_gt_113 = !/^1\.1[12]\./.test(Ember['default'].VERSION);
+    expect(ember_gt_113 ? 2 : 1);
+
+    // creates the component instance
+    var component = this.subject({
+      url: 'http://test.com',
+      fields: [],
+      trim: function trim() {}
+    });
+    equal(component._state, 'preRender');
+
+    if (ember_gt_113) {
+      // appends the component to the page
+      this.append();
+      equal(component._state, 'inDOM');
+    }
+  });
+
+});
+define('portia-web/tests/unit/components/extracted-item-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/extracted-item-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/extracted-item-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/extractor-dropzone-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('extractor-dropzone', 'ExtractorDropzoneComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/extractor-dropzone-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/extractor-dropzone-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/extractor-dropzone-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/file-download/component-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('file-download', 'FileDownloadComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/file-download/component-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components/file-download');
+  test('unit/components/file-download/component-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/file-download/component-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/inline-editable-text-field-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('inline-editable-text-field', 'InlineEditableTextFieldComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/inline-editable-text-field-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/inline-editable-text-field-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/inline-editable-text-field-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/inline-help-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('inline-help', 'InlineHelpComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/inline-help-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/inline-help-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/inline-help-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/item-select-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('item-select', 'ItemSelectComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/item-select-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/item-select-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/item-select-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/j-breadcrumb-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('j-breadcrumb', 'JBreadcrumbComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/j-breadcrumb-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/j-breadcrumb-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/j-breadcrumb-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/j-breadcrumbs-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('j-breadcrumbs', 'JBreadcrumbsComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/j-breadcrumbs-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/j-breadcrumbs-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/j-breadcrumbs-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/json-file-compare-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('json-file-compare', 'JsonFileCompareComponent', {});
+
+  ember_qunit.test('it renders', function () {
+    // creates the component instance
+
+    var component = this.subject({
+      json: { foo: 5, bar: 'foo' }
+    });
+    equal(component._state, 'preRender');
+    this.render();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/json-file-compare-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/json-file-compare-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/json-file-compare-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/label-with-tooltip-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('label-with-tooltip', 'LabelWithTooltipComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/label-with-tooltip-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/label-with-tooltip-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/label-with-tooltip-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/pin-toolbox-button-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('pin-toolbox-button', 'PinToolboxButtonComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+  ember_qunit.test('flips the state when clicked', function () {
+    var toolbox = {
+      pinned: false,
+      fixed: false
+    };
+    var component = this.subject({ toolbox: toolbox });
+    equal(toolbox.pinned, false);
+    equal(toolbox.fixed, false);
+    component.click();
+    equal(toolbox.pinned, true);
+    equal(toolbox.fixed, false);
+    component.click();
+    equal(toolbox.pinned, false);
+    equal(toolbox.fixed, false);
+  });
+
+  ember_qunit.test('sets state in localStorage', function () {
+    if (!window.localStorage) {
+      window.localStorage = {};
+    }
+    var toolbox = {
+      pinned: false,
+      fixed: false
+    };
+    var component = this.subject({ toolbox: toolbox });
+    component.click();
+    ok(window.localStorage.portia_toolbox_pinned);
+    component.click();
+    ok(!window.localStorage.portia_toolbox_pinned);
+  });
+
+});
+define('portia-web/tests/unit/components/pin-toolbox-button-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/pin-toolbox-button-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/pin-toolbox-button-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/regex-text-field-with-button/component-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('regex-text-field-with-button', 'Unit | Component | regex text field with button', {
+    // Specify the other units that are required for this test
+    needs: ['component:text-field', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // Creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // Renders the component to the page
+    this.render();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/regex-text-field-with-button/component-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components/regex-text-field-with-button');
+  test('unit/components/regex-text-field-with-button/component-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/regex-text-field-with-button/component-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/text-area-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('text-area', 'TextAreaComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/text-area-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/text-area-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/text-area-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/text-area-with-button-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('text-area-with-button', 'TextAreaWithButtonComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:text-area', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/text-area-with-button-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/text-area-with-button-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/text-area-with-button-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/text-field-dropdown-button-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('text-field-dropdown-button', 'TextFieldDropdownButtonComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:text-field', 'component:item-select', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/text-field-dropdown-button-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/text-field-dropdown-button-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/text-field-dropdown-button-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/text-field-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('text-field', 'TextFieldComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/text-field-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/text-field-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/text-field-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/text-field-with-button-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('text-field-with-button', 'TextFieldWithButtonComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:text-field', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/text-field-with-button-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/text-field-with-button-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/text-field-with-button-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/tool-box-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('tool-box', 'ToolBoxComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:pin-toolbox-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject({});
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/tool-box-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/tool-box-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/tool-box-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/top-bar-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('top-bar', 'TopBarComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:bs-label']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/top-bar-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/top-bar-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/top-bar-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/web-document-js/component-test', ['ember-qunit', 'portia-web/utils/ferry-websocket'], function (ember_qunit, FerryWebsocket) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('web-document-js', 'WebDocumentJsComponent', {
+    // specify the other units that are required for this test
+    // needs: ['component:foo', 'helper:bar']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var doc = {},
+        component = this.subject({
+      document: doc,
+      ws: new FerryWebsocket['default']()
+    });
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/web-document-js/component-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components/web-document-js');
+  test('unit/components/web-document-js/component-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/web-document-js/component-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/web-document-test', ['ember-qunit', 'portia-web/initializers/register-page-interaction', 'ember'], function (ember_qunit, register_page_interaction, Ember) {
+
+  'use strict';
+
+  var application, container;
+
+  ember_qunit.moduleForComponent('web-document', 'WebDocumentComponent', {
+    // specify the other units that are required for this test
+    needs: ['initializer:register-page-interaction']
+
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(3);
+
+    var doc = {};
+    // creates the component instance
+    var component = this.subject({
+      document: doc
+    });
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+    equal(doc.view, component, 'Component registers itself');
+  });
+
+});
+define('portia-web/tests/unit/components/web-document-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/web-document-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/web-document-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/components/wizard-box-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('wizard-box', 'WizardBoxComponent', {
+    // specify the other units that are required for this test
+    needs: ['component:text-field', 'component:bs-button']
+  });
+
+  ember_qunit.test('it renders', function () {
+    expect(2);
+
+    // creates the component instance
+    var component = this.subject();
+    equal(component._state, 'preRender');
+
+    // appends the component to the page
+    this.append();
+    equal(component._state, 'inDOM');
+  });
+
+});
+define('portia-web/tests/unit/components/wizard-box-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/components');
+  test('unit/components/wizard-box-test.js should pass jshint', function() { 
+    ok(true, 'unit/components/wizard-box-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/application-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:application', 'ApplicationController', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/application-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/application-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/application-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/base-controller-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:base-controller', 'BaseControllerController', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/base-controller-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/base-controller-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/base-controller-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/conflicts-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:conflicts', 'ConflictsController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/conflicts-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/conflicts-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/conflicts-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/items-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:items', 'ItemsController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application', 'controller:projects', 'controller:project']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/items-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/items-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/items-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/project-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:project', 'ProjectController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/project-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/project-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/project-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/project.index-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:project.index', 'Project.IndexController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application', 'controller:project']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/project.index-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/project.index-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/project.index-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/projects-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:projects', 'ProjectsController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/projects-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/projects-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/projects-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/spider-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:spider', 'SpiderController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application', 'controller:projects', 'controller:project', 'controller:project/index']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/spider-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/spider-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/spider-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/controllers/template-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('controller:template', 'TemplateController', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application', 'controller:projects', 'controller:project', 'controller:spider', 'controller:spider/index']
+  });
+
+  // Replace this with your real tests.
+  ember_qunit.test('it exists', function () {
+    var controller = this.subject();
+    ok(controller);
+  });
+
+});
+define('portia-web/tests/unit/controllers/template-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/controllers');
+  test('unit/controllers/template-test.js should pass jshint', function() { 
+    ok(true, 'unit/controllers/template-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/helpers/trim-test', ['portia-web/helpers/trim'], function (trim) {
+
+  'use strict';
+
+  module('TrimHelper');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var result = trim.trim("Hello World");
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/helpers/trim-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/helpers');
+  test('unit/helpers/trim-test.js should pass jshint', function() { 
+    ok(true, 'unit/helpers/trim-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/add-prototypes-test', ['ember', 'portia-web/initializers/add-prototypes'], function (Ember, add_prototypes) {
+
+  'use strict';
+
+  var container, application;
+
+  module('AddPrototypesInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    add_prototypes.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/add-prototypes-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/add-prototypes-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/add-prototypes-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/messages-test', ['ember', 'portia-web/initializers/messages'], function (Ember, messages) {
+
+  'use strict';
+
+  var container, application;
+
+  module('MessagesInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    messages.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/messages-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/messages-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/messages-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/project-models-test', ['ember', 'portia-web/initializers/project-models'], function (Ember, project_models) {
+
+  'use strict';
+
+  var container, application;
+
+  module('ProjectModelsInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    project_models.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/project-models-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/project-models-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/project-models-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/register-modal-test', ['ember', 'portia-web/initializers/register-modal'], function (Ember, register_modal) {
+
+  'use strict';
+
+  var container, application;
+
+  module('RegisterModalInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    register_modal.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/register-modal-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/register-modal-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/register-modal-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/register-page-interaction-test', ['ember', 'portia-web/initializers/register-page-interaction'], function (Ember, register_page_interaction) {
+
+  'use strict';
+
+  var container, application;
+
+  module('RegisterPageInteractionInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    register_page_interaction.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/register-page-interaction-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/register-page-interaction-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/register-page-interaction-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/register-websocket-test', ['ember', 'portia-web/initializers/register-websocket'], function (Ember, register_websocket) {
+
+  'use strict';
+
+  var container, application;
+
+  module('RegisterWebsocketInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    register_websocket.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/register-websocket-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/register-websocket-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/register-websocket-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/initializers/toolbox-test', ['ember', 'portia-web/initializers/toolbox'], function (Ember, toolbox) {
+
+  'use strict';
+
+  var container, application;
+
+  module('ToolboxInitializer', {
+    setup: function setup() {
+      Ember['default'].run(function () {
+        application = Ember['default'].Application.create();
+        container = application.__container__;
+        application.deferReadiness();
+      });
+    }
+  });
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    toolbox.initialize(container, application);
+
+    // you would normally confirm the results of the initializer here
+    ok(true);
+  });
+
+});
+define('portia-web/tests/unit/initializers/toolbox-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/initializers');
+  test('unit/initializers/toolbox-test.js should pass jshint', function() { 
+    ok(true, 'unit/initializers/toolbox-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/conflict-mixin-test', ['ember', 'portia-web/mixins/conflict-mixin', 'qunit'], function (Ember, ConflictMixinMixin, qunit) {
+
+  'use strict';
+
+  qunit.module('Unit | Mixin | conflict mixin');
+
+  // Replace this with your real tests.
+  qunit.test('it works', function (assert) {
+    var ConflictMixinObject = Ember['default'].Object.extend(ConflictMixinMixin['default']);
+    var subject = ConflictMixinObject.create();
+    assert.ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/conflict-mixin-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/conflict-mixin-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/conflict-mixin-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/controller-utils-test', ['ember', 'portia-web/mixins/controller-utils'], function (Ember, ControllerUtilsMixin) {
+
+  'use strict';
+
+  module('ControllerUtilsMixin');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var ControllerUtilsObject = Ember['default'].Object.extend(ControllerUtilsMixin['default']);
+    var subject = ControllerUtilsObject.create();
+    ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/controller-utils-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/controller-utils-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/controller-utils-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/draggable-test', ['ember', 'portia-web/mixins/draggable'], function (Ember, DraggableMixin) {
+
+  'use strict';
+
+  module('DraggableMixin');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var DraggableObject = Ember['default'].Object.extend(DraggableMixin['default']);
+    var subject = DraggableObject.create();
+    ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/draggable-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/draggable-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/draggable-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/droppable-test', ['ember', 'portia-web/mixins/droppable'], function (Ember, DroppableMixin) {
+
+  'use strict';
+
+  module('DroppableMixin');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var DroppableObject = Ember['default'].Object.extend(DroppableMixin['default']);
+    var subject = DroppableObject.create();
+    ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/droppable-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/droppable-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/droppable-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/guess-types-test', ['ember', 'portia-web/mixins/guess-types'], function (Ember, GuessTypesMixin) {
+
+  'use strict';
+
+  module('Unit | Mixin | guess types');
+
+  // Replace this with your real tests.
+  test('it works', function (assert) {
+    var GuessTypesObject = Ember['default'].Object.extend(GuessTypesMixin['default']);
+    var subject = GuessTypesObject.create();
+    assert.ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/guess-types-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/guess-types-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/guess-types-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/modal-handler-test', ['ember', 'portia-web/mixins/modal-handler'], function (Ember, ModalHandlerMixin) {
+
+  'use strict';
+
+  module('ModalHandlerMixin');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var ModalHandlerObject = Ember['default'].Object.extend(ModalHandlerMixin['default']);
+    var subject = ModalHandlerObject.create();
+    ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/modal-handler-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/modal-handler-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/modal-handler-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/popover-test', ['ember', 'portia-web/mixins/popover'], function (Ember, PopoverMixin) {
+
+  'use strict';
+
+  module('PopoverMixin');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var PopoverObject = Ember['default'].Object.extend(PopoverMixin['default']);
+    var subject = PopoverObject.create();
+    ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/popover-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/popover-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/popover-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/mixins/size-listener-test', ['ember', 'portia-web/mixins/size-listener'], function (Ember, SizeListenerMixin) {
+
+  'use strict';
+
+  module('SizeListenerMixin');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var SizeListenerObject = Ember['default'].Object.extend(SizeListenerMixin['default']);
+    var subject = SizeListenerObject.create();
+    ok(subject);
+  });
+
+});
+define('portia-web/tests/unit/mixins/size-listener-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/mixins');
+  test('unit/mixins/size-listener-test.js should pass jshint', function() { 
+    ok(true, 'unit/mixins/size-listener-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/annotation-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:annotation', 'Annotation', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/annotation-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/annotation-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/annotation-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/conflict-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:conflict', 'Conflict', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/conflict-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/conflict-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/conflict-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/extracted-field-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:extracted-field', 'ExtractedField', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/extracted-field-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/extracted-field-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/extracted-field-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/extracted-item-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:extracted-item', 'ExtractedItem', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/extracted-item-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/extracted-item-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/extracted-item-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/extracted-variant-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:extracted-variant', 'ExtractedVariant', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/extracted-variant-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/extracted-variant-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/extracted-variant-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/extractor-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:extractor', 'Extractor', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/extractor-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/extractor-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/extractor-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/ignore-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:ignore', 'Ignore', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/ignore-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/ignore-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/ignore-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/item-field-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:item-field', 'ItemFieldModel', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/item-field-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/item-field-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/item-field-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/item-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:item', 'Item', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/item-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/item-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/item-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/mapped-field-data-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:mapped-field-data', 'MappedFieldData', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/mapped-field-data-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/mapped-field-data-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/mapped-field-data-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/simple-model-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:simple-model', 'SimpleModel', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/simple-model-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/simple-model-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/simple-model-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/spider-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:spider', 'Spider', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/spider-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/spider-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/spider-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/models/template-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('model:template', 'TemplateModel', {
+    // Specify the other units that are required for this test.
+    needs: []
+  });
+
+  ember_qunit.test('it exists', function () {
+    var model = this.subject();
+    // var store = this.store();
+    ok(!!model);
+  });
+
+});
+define('portia-web/tests/unit/models/template-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/models');
+  test('unit/models/template-test.js should pass jshint', function() { 
+    ok(true, 'unit/models/template-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/base-route-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:base-route', 'BaseRouteRoute', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/base-route-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/base-route-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/base-route-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/conflicts-test', ['ember-qunit', 'ember'], function (ember_qunit, Ember) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:conflicts', 'ConflictsRoute', {
+    // Specify the other units that are required for this test.
+    needs: ['controller:application', 'controller:conflicts', 'template:conflicts.resolver']
+  });
+
+  function conflict(base, my, other) {
+    return {
+      __CONFLICT: {
+        base_val: base,
+        my_val: my,
+        other_val: other
+      }
+    };
+  }
+
+  var struct = {
+    foo: {
+      bar: {
+        num: 1,
+        str: 'hello',
+        arr: ['world']
+      }
+    },
+    conflicting_str: conflict('foo', 'foobar', 'barfoo'),
+    conflicting_num: conflict(1337, 42, 314)
+  };
+
+  var routeMocks = {
+    router: {
+      namespace: {},
+      router: {
+        state: {}
+      }
+    },
+    connections: []
+  };
+
+  function render(route, controller) {
+    Ember['default'].run(function () {
+      try {
+        route.render('conflicts/resolver', {
+          into: 'application',
+          outlet: 'conflictResolver',
+          controller: controller
+        });
+      } catch (e) {
+        throw new Error(e.stack);
+      }
+    });
+  }
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject(routeMocks);
+    ok(route);
+
+    var controller = route.controllerFor('conflicts');
+    controller.reopen({
+      currentFileContents: struct
+    });
+    render(route, controller);
+  });
+
+});
+define('portia-web/tests/unit/routes/conflicts-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/conflicts-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/conflicts-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/index-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:index', 'IndexRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/index-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/index-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/index-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/items-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:items', 'ItemsRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/items-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/items-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/items-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/project-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:project', 'ProjectRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/project-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/project-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/project-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/projects-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:projects', 'ProjectsRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/projects-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/projects-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/projects-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/projects.index-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:projects.index', 'Projects.IndexRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/projects.index-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/projects.index-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/projects.index-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/spider-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:spider', 'SpiderRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/spider-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/spider-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/spider-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/routes/template-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleFor('route:template', 'TemplateRoute', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  ember_qunit.test('it exists', function () {
+    var route = this.subject();
+    ok(route);
+  });
+
+});
+define('portia-web/tests/unit/routes/template-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/routes');
+  test('unit/routes/template-test.js should pass jshint', function() { 
+    ok(true, 'unit/routes/template-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/annotation-store-test', ['portia-web/utils/annotation-store'], function (AnnotationStore) {
+
+  'use strict';
+
+  module('annotation-store');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var result = new AnnotationStore['default']();
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/annotation-store-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/annotation-store-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/annotation-store-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/canvas-test', ['portia-web/utils/canvas', 'ember'], function (utils__canvas, Ember) {
+
+  'use strict';
+
+  var canvas = null;
+
+  module('portia | utils | canvas');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var canvas = $('<canvas id="portiacanvas"/>').appendTo(document.body);
+    var result = utils__canvas.Canvas.create({
+      canvasId: 'portiacanvas'
+    });
+    canvas.remove();
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/canvas-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/canvas-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/canvas-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/ferry-websocket-test', ['portia-web/utils/ferry-websocket'], function (FerryWebsocket) {
+
+  'use strict';
+
+  module('FerryWebsocket');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var result = new FerryWebsocket['default']();
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/ferry-websocket-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/ferry-websocket-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/ferry-websocket-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/interaction-event-test', ['portia-web/utils/interaction-event'], function (interactionEvent) {
+
+  'use strict';
+
+  module('interactionEvent');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var evt = document.createEvent('Event');
+    evt.initEvent('scroll', true, true);
+    document.documentElement.nodeid = evt;
+    document.documentElement.dispatchEvent(evt);
+    var result = interactionEvent['default'](evt);
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/interaction-event-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/interaction-event-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/interaction-event-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/modal-manager-test', ['portia-web/utils/modal-manager'], function (modalManager) {
+
+  'use strict';
+
+  module('modalManager');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var result = modalManager['default'].create();
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/modal-manager-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/modal-manager-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/modal-manager-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/slyd-api-test', ['portia-web/utils/slyd-api'], function (slydApi) {
+
+  'use strict';
+
+  module('slydApi');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var result = slydApi['default'].create();
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/slyd-api-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/slyd-api-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/slyd-api-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/sprite-store-test', ['portia-web/utils/sprite-store'], function (spriteStore) {
+
+  'use strict';
+
+  module('spriteStore');
+
+  // Replace this with your real tests.
+  test('it works', function () {
+    var result = spriteStore['default'].create();
+    ok(result);
+  });
+
+});
+define('portia-web/tests/unit/utils/sprite-store-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/sprite-store-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/sprite-store-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/suggest-annotations-test', ['portia-web/utils/suggest-annotations', 'qunit'], function (suggest_annotations, qunit) {
+
+    'use strict';
+
+    var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
+
+    qunit.module('Unit | Utility | Suggest Annotations');
+
+    // Replace this with your real tests.
+    qunit.test('findReleatedTableCell', function (assert) {
+        var table = $('\n        <table>\n          <tr>\n              <td id="brand">Brand</td>\n              <td>Intel</td>\n          </tr>\n          <tr>\n              <td id="series">Series</td>\n              <td>Core i5</td>\n          </tr>\n          <tr>\n              <td id="cores">Cores</td>\n              <td>4</td>\n          </tr>\n        </table>\n    ');
+
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#brand')[0]).firstChild.nodeValue, 'Intel');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#series')[0]).firstChild.nodeValue, 'Core i5');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+
+        table = $('\n        <table>\n          <tr>\n              <td id="brand">Brand</td>\n              <td id="series">Series</td>\n              <td id="cores">Cores</td>\n          </tr>\n          <tr>\n              <td>Intel</td>\n              <td>Core i5</td>\n              <td>4</td>\n          </tr>\n        </table>\n    ');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#brand')[0]).firstChild.nodeValue, 'Intel');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#series')[0]).firstChild.nodeValue, 'Core i5');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+
+        table = $('\n        <table>\n          <tr>\n              <th id="brand">Brand</th>\n              <th id="series">Series</th>\n              <th id="cores">Cores</th>\n          </tr>\n          <tr>\n              <td>Intel</td>\n              <td>Core i5</td>\n              <td>4</td>\n          </tr>\n        </table>\n    ');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#brand')[0]).firstChild.nodeValue, 'Intel');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#series')[0]).firstChild.nodeValue, 'Core i5');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+
+        table = $('\n        <table>\n          <thead>\n            <tr>\n                <td id="brand">Brand</td>\n                <td id="series">Series</td>\n                <td id="cores">Cores</td>\n            </tr>\n          </thead>\n          <tr>\n              <td>Intel</td>\n              <td>Core i5</td>\n              <td>4</td>\n          </tr>\n        </table>\n    ');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#brand')[0]).firstChild.nodeValue, 'Intel');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#series')[0]).firstChild.nodeValue, 'Core i5');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+
+        table = $('\n        <table>\n          <thead>\n            <tr>\n                <td id="brand">Brand</td>\n                <td id="series">Series</td>\n                <td id="cores">Cores</td>\n            </tr>\n          </thead>\n          <tbody>\n            <tr>\n                <td>Intel</td>\n                <td>Core i5</td>\n                <td>4</td>\n            </tr>\n          </tbody>\n        </table>\n    ');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#brand')[0]).firstChild.nodeValue, 'Intel');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#series')[0]).firstChild.nodeValue, 'Core i5');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+
+        table = $('\n        <table>\n          <thead>\n            <tr>\n                <td colspan="2">Model</td>\n                <td id="cores">Cores</td>\n            </tr>\n          </thead>\n          <tbody>\n            <tr>\n                <td>Intel</td>\n                <td>Core i5</td>\n                <td>4</td>\n            </tr>\n          </tbody>\n        </table>\n    ');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+        table = $('\n        <table>\n          <thead>\n            <tr>\n                <td id="brand">Brand</td>\n                <td id="series">Series</td>\n                <td id="cores">Cores</td>\n            </tr>\n          </thead>\n          <tbody>\n            <tr>\n                <td colspan="2">Intel Core I5</td>\n                <td>4</td>\n            </tr>\n          </tbody>\n        </table>\n    ');
+        assert.equal(suggest_annotations.findReleatedTableCell(table.find('#cores')[0]).firstChild.nodeValue, '4');
+    });
+
+    function sum(numbers) {
+        return numbers.reduce(function (a, b) {
+            return a + b;
+        }, 0);
+    }
+
+    function nodeArea(node) {
+        return sum(Array.from(node.getClientRects()).map(function (rect) {
+            return rect.width * rect.height;
+        }));
+    }
+
+    function testSuggester(assert, fragment, field, expectedSuggestion, expectedSuggestor) {
+        var doc = document.implementation.createHTMLDocument('test');
+        doc.body.innerHTML = fragment;
+        var done = assert.async();
+
+        //assert.equal(doc.documentElement.outerHTML, '');
+
+        suggest_annotations.suggestAnnotations(doc, [field], function (suggestions) {
+            assert.equal(suggestions.length, 1);
+
+            var _suggestions$0 = _slicedToArray(suggestions[0], 4);
+
+            var sfield = _suggestions$0[0];
+            var node = _suggestions$0[1];
+            var attr = _suggestions$0[2];
+            var suggestor = _suggestions$0[3];
+
+            assert.equal(sfield, field);
+            var value = attr === 'content' ? node.textContent : node.getAttribute(attr);
+            assert.equal(value, expectedSuggestion);
+            assert.equal(suggestor, expectedSuggestor);
+
+            done();
+        });
+    }
+
+    qunit.test('suggestAnnotations', function (assert) {
+        var test = testSuggester.bind(null, assert);
+
+        var img = "http://google.com/favicon.ico";
+
+        // Title suggester
+        //test('', 'title', 'test', 'title');
+
+        // Microdata
+        test('<img itemprop="qwerty" src="' + img + '"/>', 'qwerty', img, 'microdata');
+        test('<img itemprop="qwerty" src="' + img + '"/>', 'qwertyvalue', img, 'microdata');
+        test('<p itemprop="qwerty">hihi</p>', 'qwertyfoobar', 'hihi', 'microdata');
+
+        // Link
+        test('<a href="hihi">next</a>', 'next_url', 'hihi', 'links');
+        test('<a href="hihi">Next Page →</a>', 'next_url', 'hihi', 'links');
+        test('<a href="hihi">Next Page →</a>', 'next_page_url', 'hihi', 'links');
+
+        // Table
+        var table = '\n    <table>\n      <tr>\n          <td>Brand</td>\n          <td>Intel</td>\n      </tr>\n      <tr>\n          <td>Series</td>\n          <td>Core i5</td>\n      </tr>\n      <tr>\n          <td>Cores</td>\n          <td>4</td>\n      </tr>\n    </table>';
+        test(table, 'series', 'Core i5', 'table');
+        test(table, 'brand', 'Intel', 'table');
+        test(table, 'cores', '4', 'table');
+
+        table = '\n        <table>\n          <tr>\n              <td>Brand</td>\n              <td>Series</td>\n              <td>Cores</td>\n          </tr>\n          <tr>\n              <td>Intel</td>\n              <td>Core i5</td>\n              <td>4</td>\n          </tr>\n        </table>\n    ';
+        test(table, 'brand', 'Intel', 'table');
+        test(table, 'series', 'Core i5', 'table');
+        test(table, 'cores', '4', 'table');
+
+        // id class
+        test('<div id="fubar">hihi</div>', 'fubar', 'hihi', 'id_class');
+        test('<div class="fubar">hihi</div>', 'fubar', 'hihi', 'id_class');
+        test('<div class="fubar">hihi</div><span id="fubar">haha</span>', 'fubar', 'haha', 'id_class');
+
+        // dt dd
+        test('<dt>Fubar</dt><dd>hihi</dd>', 'fubar', 'hihi', 'dt_dd');
+
+        // text_content
+        test('<div>€55</div>', 'price', '€55', 'text_content');
+        test('<div>50%</div>', 'percent', '50%', 'text_content');
+        test('<div>24/12/1991</div>', 'date', '24/12/1991', 'text_content');
+
+        test('<div><strong>SKU:</strong> 12345</div>', 'sku', 'SKU: 12345', 'text_content');
+        test('<div>SKU: 12345</div>', 'sku', 'SKU: 12345', 'text_content');
+        test('<div><span>SKU:</span>     <span>12345</span></div>', 'sku', '12345', 'text_content');
+    });
+
+});
+define('portia-web/tests/unit/utils/suggest-annotations-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/suggest-annotations-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/suggest-annotations-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/timer-test', ['ember', 'portia-web/utils/timer'], function (Ember, Timer) {
+
+    'use strict';
+
+    module('Unit | Utility | timer');
+
+    // Replace this with your real tests.
+    test('it works', function (assert) {
+        var timer = Timer['default'].create();
+        ok(timer);
+    });
+
+});
+define('portia-web/tests/unit/utils/timer-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/timer-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/timer-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/unit/utils/validate-field-name-test', ['portia-web/utils/validate-field-name', 'qunit'], function (validateFieldName, qunit) {
+
+  'use strict';
+
+  qunit.module('Unit | Utility | validate field name');
+
+  // Replace this with your real tests.
+  qunit.test('it works', function (assert) {
+    var fields = [{ name: 'unique' }, { name: 'not_unique' }];
+    assert.ok(validateFieldName['default']('_template'));
+    assert.ok(validateFieldName['default']('_new_meta_field'));
+    assert.ok(validateFieldName['default']('url'));
+    assert.ok(validateFieldName['default']('not_unique', fields));
+    assert.equal(validateFieldName['default']('new_field', fields), null);
+  });
+
+});
+define('portia-web/tests/unit/utils/validate-field-name-test.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - unit/utils');
+  test('unit/utils/validate-field-name-test.js should pass jshint', function() { 
+    ok(true, 'unit/utils/validate-field-name-test.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/annotation-store.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/annotation-store.js should pass jshint', function() { 
+    ok(true, 'utils/annotation-store.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/canvas.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/canvas.js should pass jshint', function() { 
+    ok(true, 'utils/canvas.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/experiments.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/experiments.js should pass jshint', function() { 
+    ok(true, 'utils/experiments.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/ferry-websocket.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/ferry-websocket.js should pass jshint', function() { 
+    ok(true, 'utils/ferry-websocket.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/interaction-event.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/interaction-event.js should pass jshint', function() { 
+    ok(true, 'utils/interaction-event.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/messages.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/messages.js should pass jshint', function() { 
+    ok(true, 'utils/messages.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/modal-manager.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/modal-manager.js should pass jshint', function() { 
+    ok(true, 'utils/modal-manager.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/notification-manager.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/notification-manager.js should pass jshint', function() { 
+    ok(true, 'utils/notification-manager.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/selector-prediction.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/selector-prediction.js should pass jshint', function() { 
+    ok(true, 'utils/selector-prediction.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/slyd-api.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/slyd-api.js should pass jshint', function() { 
+    ok(true, 'utils/slyd-api.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/sprite-store.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/sprite-store.js should pass jshint', function() { 
+    ok(true, 'utils/sprite-store.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/suggest-annotations.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/suggest-annotations.js should pass jshint', function() { 
+    ok(true, 'utils/suggest-annotations.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/timer.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/timer.js should pass jshint', function() { 
+    ok(true, 'utils/timer.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/utils.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/utils.js should pass jshint', function() { 
+    ok(true, 'utils/utils.js should pass jshint.'); 
+  });
+
+});
+define('portia-web/tests/utils/validate-field-name.jshint', function () {
+
+  'use strict';
+
+  module('JSHint - utils');
+  test('utils/validate-field-name.js should pass jshint', function() { 
+    ok(true, 'utils/validate-field-name.js should pass jshint.'); 
+  });
+
+});
 define('portia-web/utils/annotation-store', ['exports', 'ember', 'portia-web/models/annotation', 'portia-web/utils/utils'], function (exports, Ember, Annotation, utils) {
 
     'use strict';
@@ -26065,6 +31098,9 @@ define('portia-web/utils/slyd-api', ['exports', 'ember', 'ic-ajax', 'portia-web/
             return this.getApiUrl() + '/' + this.project + '/bot/';
         }).property('project'),
 
+        scrapelyUrl: (function () {
+            return this.getApiUrl() + '/' + this.project + '/scrapely/';
+        }).property('project'),
         /**
         @public
          Fetches project names.
@@ -26179,7 +31215,7 @@ define('portia-web/utils/slyd-api', ['exports', 'ember', 'ic-ajax', 'portia-web/
             hash.url = this.get('projectSpecUrl') + 'spiders/' + (spiderName || this.get('spider'));
             return this.makeAjaxCall(hash).then(function (spiderData) {
                 spiderData['name'] = spiderName || this.get('spider');
-                spiderData['templates'] = spiderData['templates'].map(function (template) {
+                spiderData.templates = (spiderData.templates || []).map(function (template) {
                     // Assign a name to templates. This is needed as Autoscraping templates
                     // are not named.
                     if (Ember['default'].isEmpty(template['name'])) {
@@ -26643,6 +31679,29 @@ define('portia-web/utils/slyd-api', ['exports', 'ember', 'ic-ajax', 'portia-web/
             hash.url = this.get('botUrl') + 'fetch';
             return this.makeAjaxCall(hash)['catch'](function (err) {
                 err.title = 'Failed to fetch page';
+                throw err;
+            });
+        },
+
+        /**
+        @public
+         Training scrapely using a given spider.
+         @method trainScrapely
+        @for this
+        @param {String} [spiderName] the name of the spider to use.
+        @return {Promise} a promise that fulfills with an {Object} containing
+            the document contents (page), the response data (response), the
+            extracted items (items), the request fingerprint (fp), an error
+            message (error) and the links that will be followed (links).
+        */
+        trainScrapely: function trainScrapely(spiderName) {
+            var hash = {};
+            hash.type = 'POST';
+            var data = { spider: spiderName || this.get('spider') };
+            hash.data = data;
+            hash.url = this.get('scrapelyUrl') + 'train';
+            return this.makeAjaxCall(hash)['catch'](function (err) {
+                err.title = 'Failed to train scrapely';
                 throw err;
             });
         },
@@ -27752,3 +32811,4 @@ if (runningTests) {
 }
 
 /* jshint ignore:end */
+//# sourceMappingURL=portia-web.map

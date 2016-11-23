@@ -101,8 +101,12 @@ export default BaseController.extend({
         return this.get('showItems') ? "Hide Items " : "Show Items";
     }.property('showItems'),
 
+//    testButtonLabel: function() {
+//        return this.get('testing') ? "Stop testing" : "Test spider";
+//    }.property('testing'),
+
     testButtonLabel: function() {
-        return this.get('testing') ? "Stop testing" : "Test spider";
+        return this.get('testing') ? "Stop training" : "Train scrapely";
     }.property('testing'),
 
     links_to_follow: function(key, follow) {
@@ -349,6 +353,22 @@ export default BaseController.extend({
         });
     },
 
+    trainScrapely: function() {
+        let result = null;
+
+        this.get('documentView').hideLoading();
+        this.set('testing', false);
+        this.showSuccessNotification("Training scrapely started",
+                          "The training process of scrapely is started successfully");
+
+        result = this.get('slyd').trainScrapely(this.get('model.name')).then(() => {
+            this.showSuccessNotification("Training scrapely finished",
+                            "The training process of scrapely is finished successfully");}).catch(function(err){
+                              throw err;
+                            });
+        return result;
+    },
+
     reload: function() {
         // TODO: This resets the baseurl the page was loaded with (if it was set)
         this.loadUrl(this.get('documentView.currentUrl'));
@@ -515,6 +535,19 @@ export default BaseController.extend({
                 this.set('showItems', true);
                 this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
                 this.testSpider();
+            }
+        },
+
+        trainScrapely: function() {
+            if (this.get('testing')) {
+                this.get('pendingUrls').clear();
+            } else {
+                this.set('testing', true);
+                this.get('documentView').showLoading();
+                this.get('extractedItems').clear();
+                this.set('showItems', true);
+                this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
+                this.trainScrapely();
             }
         },
 
