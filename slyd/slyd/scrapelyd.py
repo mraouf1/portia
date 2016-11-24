@@ -4,6 +4,7 @@ from .resource import SlydJsonResource
 from scrapy import log
 import errno
 import os
+import json
 
 
 def create_scrapelyd_resource(spec_manager):
@@ -55,7 +56,7 @@ class Train(ScrapelyResource):
         except IOError:
             log.msg('ERROR saving file')
         log.msg('Scraper instance is saved at /var/kipp/scrapely_template')
-        return str(template_names)
+        return json.dumps({"template_names":template_names})
 
     def _train_scrapely(self, scraper, data_set):
         for scrapely_data in data_set:
