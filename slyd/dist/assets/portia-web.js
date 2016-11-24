@@ -564,10 +564,10 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
             if (data.suggested) {
                 text = 'Suggestion: ' + text;
             }
-            this.get('sprites').addSprite(this.get('mappedDOMElement'), text, {
+            this.get('sprites').addSprite(this.get('mappedDOMElement'), text, this.get('mappings'), {
                 fillColor: data.suggested ? 'rgba(28, 171, 76, 0.4)' : this.get('sprites.fillColor')
             });
-        }).observes('sprite', 'data.suggested'),
+        }).observes('sprite', 'data.suggested', 'mappings'),
 
         updateIgnore: (function () {
             var data = this.get('data');
@@ -7243,6 +7243,17 @@ define('portia-web/controllers/template', ['exports', 'ember', 'portia-web/contr
                     this.set('model.plugins.' + key, this.getWithDefault('extractionTools.' + key + '.data', { extracts: [] }));
                 }
             }
+            var mappedSprites = this.get('sprites._sprites');
+            var scrapelyData = {};
+            scrapelyData['url'] = this.get('model.url');
+            scrapelyData['flag'] = false;
+            scrapelyData['data'] = {};
+            for (var i = 0; i < mappedSprites.length; i++) {
+                var field = mappedSprites[i].scrapelyData.field;
+                var content = mappedSprites[i].scrapelyData.content;
+                scrapelyData['data'][field] = content;
+            }
+            this.set('model.scrapely_data', scrapelyData);
             var missingFields = this.getMissingFields();
             if (missingFields.length > 0) {
                 this.showWarningNotification('Required Fields Missing', 'You are unable to save this template as the following required fields are missing: "' + missingFields.join('", "') + '".');
@@ -9512,7 +9523,7 @@ define('portia-web/models/template', ['exports', 'portia-web/models/simple-model
     'use strict';
 
     exports['default'] = SimpleModel['default'].extend({
-        serializedProperties: ['page_id', 'default', 'scrapes', 'page_type', 'url', 'annotations', 'extractors', 'name', 'plugins'],
+        serializedProperties: ['page_id', 'default', 'scrapes', 'page_type', 'url', 'annotations', 'extractors', 'name', 'plugins', 'scrapely_data'],
         page_id: '',
         scrapes: 'default',
         page_type: 'item',
@@ -9520,7 +9531,8 @@ define('portia-web/models/template', ['exports', 'portia-web/models/simple-model
         annotated_body: '',
         original_body: '',
         _new: false,
-        extractors: null
+        extractors: null,
+        scrapely_data: null
     });
 
 });
@@ -31854,13 +31866,15 @@ define('portia-web/utils/sprite-store', ['exports', 'ember', 'portia-web/utils/c
         }).property('_sprites.@each', '_ignores.@each'),
 
         addSprite: function addSprite(element, text) {
-            var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+            var scrapelyData = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+            var options = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
 
             var updated = false;
             this.get('_sprites').forEach(function (sprite) {
                 if (Ember['default'].$(sprite.element).get(0) === element) {
                     sprite.setProperties(options);
                     sprite.set('name', text);
+                    sprite.set('scrapelyData', scrapelyData[0]);
                     updated = true;
                 }
             });
@@ -31869,6 +31883,7 @@ define('portia-web/utils/sprite-store', ['exports', 'ember', 'portia-web/utils/c
             } else {
                 this.get('_sprites').pushObject(Ember['default'].Object.create({
                     name: text,
+                    scrapelyData: scrapelyData[0],
                     element: element,
                     highlight: false,
                     fillColor: options.fillColor || this.get('fillColor'),

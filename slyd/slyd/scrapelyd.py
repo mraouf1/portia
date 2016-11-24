@@ -68,7 +68,7 @@ class Train(ScrapelyResource):
     def _decode_dict(self, dict_to_decode):
         new_dict = dict_to_decode.copy()
         for key, value in dict_to_decode.items():
-            dict_to_decode[key.encode('utf-8', 'ignore')] = value.encode('utf-8', 'ignore')
+            new_dict[key.encode('utf-8')] = value.encode('utf-8')
         return new_dict
 
     def _get_templates_data_set(self, templates):
