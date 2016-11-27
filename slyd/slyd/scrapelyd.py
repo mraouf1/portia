@@ -41,7 +41,7 @@ class Train(ScrapelyResource):
         self.scrapelyd.scraper = self._train_scrapely(self.scrapelyd.scraper, data_set)
         log.msg('Scrapely is trained with templates %s' % str(template_names))
 
-        scrapely_directory = '/var/kipp/scrapely_template'
+        scrapely_directory = '/var/kipp/scrapely_templates'
         if not os.path.exists(scrapely_directory):
             os.makedirs(scrapely_directory)
 
