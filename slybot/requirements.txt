@@ -1,6 +1,7 @@
 # Slybot requirements
 scrapy==1.1.0
 Cython==0.25.1
+bs4==0.0.1
 git+https://github.com/nabilm/scrapely.git@required_fields#egg=scrapely
 loginform==1.2.0
 lxml==3.6.0
