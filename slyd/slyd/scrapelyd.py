@@ -6,6 +6,10 @@ import errno
 import os
 import json
 
+SCRAPELY_TEMPLATES_DIR = '/var/kipp/scrapely_templates'
+if not os.path.exists(SCRAPELY_TEMPLATES_DIR):
+    os.makedirs(SCRAPELY_TEMPLATES_DIR)
+
 
 def create_scrapelyd_resource(spec_manager):
     scrapelyd = SlydScrapely(spec_manager.settings, spec_manager)
@@ -36,44 +40,32 @@ class Train(ScrapelyResource):
         templates, spider_name = self._create_spider(
             request.project, request.auth_info, params)
         template_names = self._get_templates_name(templates)
-        log.msg('Start training scrapely for %s Spider' % params.get('spider'))
-        data_set = self._get_templates_data_set(templates)
-        self.scrapelyd.scraper = self._train_scrapely(self.scrapelyd.scraper, data_set)
-        log.msg('Scrapely is trained with templates %s' % str(template_names))
+        log.msg('Start generating scrapely templates for %s Spider' % params.get('spider'))
+        scrapely_templates = self._generate_scrapely_templates(templates)
+        log.msg('Scrapely templates generated from templates %s' % str(template_names))
 
-        scrapely_directory = '/var/kipp/scrapely_template'
-        if not os.path.exists(scrapely_directory):
-            os.makedirs(scrapely_directory)
-
-        spider_name_processed = spider_name[0:spider_name.find('.')]
-        scrapely_file_name = "%s.json" % spider_name_processed
-        scrapely_file_path = os.path.join(scrapely_directory,scrapely_file_name)
+        scrapely_file_name = "%s.json" % spider_name
+        scrapely_file_path = os.path.join(SCRAPELY_TEMPLATES_DIR, scrapely_file_name)
         if os.path.exists(scrapely_file_path):
             os.remove(scrapely_file_path)
-        try:
-            with open(scrapely_file_path, "w") as outfile:
-                self.scrapelyd.scraper.tofile(outfile)
-        except IOError:
-            log.msg('ERROR saving file')
-        log.msg('Scraper instance is saved at /var/kipp/scrapely_template')
-        return json.dumps({"template_names":template_names})
 
-    def _train_scrapely(self, scraper, data_set):
-        for scrapely_data in data_set:
-            url = scrapely_data['url']
-            data = self._decode_dict(scrapely_data['data'])
-            scraper.train(url, data)
-        return scraper
+        with open(scrapely_file_path, "w") as outfile:
+            json.dump({"templates": scrapely_templates}, outfile)
 
-    def _decode_dict(self, dict_to_decode):
-        new_dict = dict_to_decode.copy()
-        for key, value in dict_to_decode.items():
-            new_dict[key.encode('utf-8')] = value.encode('utf-8')
-        return new_dict
+        log.msg('Scraper instance is saved at %s' % SCRAPELY_TEMPLATES_DIR)
+        return json.dumps({"template_names": scrapely_templates})
 
-    def _get_templates_data_set(self, templates):
-        template_data_set = [template['scrapely_data'] for template in templates]
-        return template_data_set
+    def _generate_scrapely_templates(self, templates):
+        scrapely_templates = []
+        for template in templates:
+            scrapely_template = dict()
+            scrapely_template['url'] = template['url']
+            scrapely_template['headers'] = template.get('headers', {})
+            scrapely_template['encoding'] = template.get('encoding', 'utf-8')
+            scrapely_template['body'] = template.get('annotated_body', '')
+            scrapely_template['page_id'] = template.get('page_id', '')
+            scrapely_templates.append(scrapely_template.copy())
+        return scrapely_templates
 
     def _get_templates_name(self, templates):
         template_names = [template['name'] for template in templates]
