@@ -53,7 +53,7 @@ class Train(ScrapelyResource):
             json.dump({"templates": scrapely_templates}, outfile)
 
         log.msg('Scraper instance is saved at %s' % SCRAPELY_TEMPLATES_DIR)
-        return json.dumps({"template_names": scrapely_templates})
+        return json.dumps({"template_names": template_names})
 
     def _generate_scrapely_templates(self, templates):
         scrapely_templates = []
