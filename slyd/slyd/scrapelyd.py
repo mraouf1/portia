@@ -36,9 +36,15 @@ class Train(ScrapelyResource):
     isLeaf = True
 
     def render_POST(self, request):
+        """
+        define endpoint for scrapely/train API. Create the spider and generate scrapely template
+        :param request:
+        :return: template names used in training scrapely
+        """
         params = self.read_json(request)
-        templates, spider_name = self._create_spider(
-            request.project, request.auth_info, params)
+        spider_name = params.get('spider')
+        spider_spec = self._create_spider(request.project, request.auth_info, spider_name)
+        templates = spider_spec['templates']
         template_names = self._get_templates_name(templates)
         log.msg('Start generating scrapely templates for %s Spider' % params.get('spider'))
         scrapely_templates = self._generate_scrapely_templates(templates)
@@ -56,6 +62,11 @@ class Train(ScrapelyResource):
         return json.dumps({"template_names": template_names})
 
     def _generate_scrapely_templates(self, templates):
+        """
+        Combine all templates in a list and add headers
+        :param templates:
+        :return: scrapely_templates: a list of all templates for this spider
+        """
         scrapely_templates = []
         for template in templates:
             scrapely_template = dict()
@@ -68,17 +79,29 @@ class Train(ScrapelyResource):
         return scrapely_templates
 
     def _get_templates_name(self, templates):
+        """
+        get the templates and return the template names
+        :param templates:
+        :return: template_names: template names of templates
+        """
         template_names = [template['name'] for template in templates]
         return template_names
 
-    def _create_spider(self, project, auth_info, params, **kwargs):
-        spider = params.get('spider')
-        if spider is None:
-            return None, None
+    def _create_spider(self, project, auth_info, spider_name, **kwargs):
+        """
+        create the spider from the spec manager
+        :param project:
+        :param auth_info:
+        :param spider_name:
+        :param kwargs:
+        :return:
+        """
+        if spider_name is None:
+            return None
         pspec = self.scrapelyd.spec_manager.project_spec(project, auth_info)
         try:
-            spider_spec = pspec.spider_with_templates(spider)
-            return (spider_spec['templates'], spider)
+            spider_spec = pspec.spider_with_templates(spider_name)
+            return spider_spec
         except IOError as ex:
             if ex.errno == errno.ENOENT:
                 log.msg("skipping extraction, no spec: %s" % ex.filename)
