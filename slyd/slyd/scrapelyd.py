@@ -6,6 +6,19 @@ import errno
 import os
 import json
 
+MECHANT_SETTING_BASE = """
+# Automatically created by: slyd
+# -*- coding: utf-8 -*-
+LOG_FILE = '/var/kipp/logs/{0}.log'
+USE_SCRAPELY = True
+START_URLS = {1}
+ALLOWED_DOMAINS = {2}
+MERCHANT_URLS_CONFIG = [{{"url": "{1}", 'cookie_config': None}}]
+RULES = [Rule(LxmlLinkExtractor(allow={3},
+                                deny={4}),
+              callback='parse_item', follow=True)]
+"""
+
 SCRAPELY_TEMPLATES_DIR = '/var/kipp/scrapely_templates'
 if not os.path.exists(SCRAPELY_TEMPLATES_DIR):
     os.makedirs(SCRAPELY_TEMPLATES_DIR)
@@ -44,6 +57,7 @@ class Train(ScrapelyResource):
         params = self.read_json(request)
         spider_name = params.get('spider')
         spider_spec = self._create_spider(request.project, request.auth_info, spider_name)
+        self._create_kipp_setting(spider_name, spider_spec)
         templates = spider_spec['templates']
         template_names = self._get_templates_name(templates)
         log.msg('Start generating scrapely templates for %s Spider' % params.get('spider'))
@@ -108,3 +122,39 @@ class Train(ScrapelyResource):
                 return None
             else:
                 raise
+
+    def _create_kipp_setting(self, merchant_name, spider_spec):
+        """
+        preprocess spider specs and call _create_setting_file function
+        :param merchant_name:
+        :param country:
+        :param spider_spec:
+        :return:
+        """
+        country_code = spider_spec['country_code']
+        if len(country_code) < 1:
+          raise Exception
+        country_code = country_code[0]
+        KIPP_MERCHANT_SETTINGS_DIR = '/apps/kipp/kipp/kipp_base/kipp_settings/%s' % country_code
+        if not os.path.exists(KIPP_MERCHANT_SETTINGS_DIR):
+          os.makedirs(KIPP_MERCHANT_SETTINGS_DIR)
+        MERCHANT_FILE_PATH = KIPP_MERCHANT_SETTINGS_DIR + '/' + merchant_name + '.py'
+
+        start_urls = spider_spec['start_urls']
+        allow_regex = spider_spec['follow_patterns']
+        allowed_domains = start_urls[0].split("//")[-1].split("/")[0]
+        allowed_domains = [allowed_domains]
+        deny_regex = spider_spec['exclude_patterns']
+        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name, start_urls,
+                                  allowed_domains, allow_regex, deny_regex)
+
+    def _create_setting_file(self, file_path, *args):
+        """
+        create setting file on the disk
+        :param file_path:
+        :param args:
+        :return:
+        """
+        merchant_setting = MECHANT_SETTING_BASE.format(args[0], args[1], args[2], args[3], args[4])
+        with open(file_path, 'w') as f:
+          f.write(merchant_setting)
