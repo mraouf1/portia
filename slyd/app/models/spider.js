@@ -3,7 +3,7 @@ import SimpleModel from './simple-model';
 
 const ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns",
     "js_enable_patterns", "js_disable_patterns", "allowed_domains",
-    "templates", "template_names", "page_actions"
+    "templates", "template_names", "page_actions", 'country_code'
 ];
 
 export default SimpleModel.extend({
@@ -11,9 +11,10 @@ export default SimpleModel.extend({
         'start_urls', 'links_to_follow', 'follow_patterns',
         'js_enabled', 'js_enable_patterns', 'js_disable_patterns',
         'exclude_patterns', 'respect_nofollow',
-        'init_requests', 'template_names', 'page_actions'],
+        'init_requests', 'template_names', 'page_actions', 'country_code'],
     serializedRelations: ['templates'],
     start_urls: null,
+    country_code: null,
     links_to_follow: 'patterns',
     follow_patterns: null,
     exclude_patterns: null,
