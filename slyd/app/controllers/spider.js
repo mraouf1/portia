@@ -34,6 +34,9 @@ export default BaseController.extend({
     editAllStartUrlsAction: 'editAllStartUrls',
     editAllStartUrlsText: 'Edit All',
 
+    countryCode: null,
+    countryAction: 'addCountryCode',
+
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
         { value: 'none', label: "Don't follow links" },
@@ -285,6 +288,13 @@ export default BaseController.extend({
         });
     },
 
+    addCountryCode: function(code) {
+        var modelCountryCode = this.get('model.country_code');
+        if (code && Ember.$.inArray(code, modelCountryCode) < 0) {
+                modelCountryCode.pushObject(code);
+            }
+    },
+
     addExcludePattern: function(pattern, index) {
         if (index !== undefined) {
             this.get('model.exclude_patterns').insertAt(index, pattern);
@@ -444,6 +454,10 @@ export default BaseController.extend({
 
         addStartUrls: function(urls) {
             this.addStartUrls(urls);
+        },
+
+        addCountryCode: function(code) {
+            this.addCountryCode(code);
         },
 
         deleteStartUrl: function(url) {
