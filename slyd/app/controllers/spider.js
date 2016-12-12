@@ -34,8 +34,7 @@ export default BaseController.extend({
     editAllStartUrlsAction: 'editAllStartUrls',
     editAllStartUrlsText: 'Edit All',
 
-    countryCode: null,
-    countryAction: 'addCountryCode',
+    countryCodes: ["eg", "sa", "ae"],
 
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
@@ -289,10 +288,9 @@ export default BaseController.extend({
     },
 
     addCountryCode: function(code) {
-        var modelCountryCode = this.get('model.country_code');
-        if (code && Ember.$.inArray(code, modelCountryCode) < 0) {
-                modelCountryCode.pushObject(code);
-            }
+        if (code) {
+            this.set('model.country_code', code);
+        }
     },
 
     addExcludePattern: function(pattern, index) {
