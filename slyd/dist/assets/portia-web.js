@@ -6514,8 +6514,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         editAllStartUrlsAction: 'editAllStartUrls',
         editAllStartUrlsText: 'Edit All',
 
-        countryCode: null,
-        countryAction: 'addCountryCode',
+        countryCodes: ["eg", "sa", "ae"],
 
         followPatternOptions: [{ value: 'all', label: 'Follow all in-domain links' }, { value: 'none', label: "Don't follow links" }, { value: 'patterns', label: 'Configure follow and exclude patterns' }],
 
@@ -6750,9 +6749,8 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         addCountryCode: function addCountryCode(code) {
-            var modelCountryCode = this.get('model.country_code');
-            if (code && Ember['default'].$.inArray(code, modelCountryCode) < 0) {
-                modelCountryCode.pushObject(code);
+            if (code) {
+                this.set('model.country_code', code);
             }
         },
 
@@ -9452,7 +9450,7 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
 
     'use strict';
 
-    var ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns", "js_enable_patterns", "js_disable_patterns", "allowed_domains", "templates", "template_names", "page_actions", 'country_code'];
+    var ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns", "js_enable_patterns", "js_disable_patterns", "allowed_domains", "templates", "template_names", "page_actions"];
 
     exports['default'] = SimpleModel['default'].extend({
         serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code'],
@@ -20369,9 +20367,24 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n        ");
+            var el1 = dom.createTextNode("\n\n        ");
             dom.appendChild(el0, el1);
-            var el1 = dom.createComment("");
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:20px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("span");
+            dom.setAttribute(el2,"class","important-label");
+            var el3 = dom.createTextNode("Select country code");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n        ");
+            dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
             var el1 = dom.createTextNode("\n\n        ");
             dom.appendChild(el0, el1);
@@ -20429,7 +20442,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             var morph1 = dom.createMorphAt(element13,3,3);
             var morph2 = dom.createMorphAt(element14,1,1);
             var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
-            var morph4 = dom.createMorphAt(fragment,7,7,contextualElement);
+            var morph4 = dom.createMorphAt(dom.childAt(fragment, [7]),3,3);
             var morph5 = dom.createMorphAt(element15,3,3);
             var morph6 = dom.createMorphAt(element15,5,5);
             var morph7 = dom.createMorphAt(fragment,11,11,contextualElement);
@@ -20439,7 +20452,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             element(env, element14, context, "bind-attr", [], {"style": "tiny_box_style"});
             block(env, morph2, context, "each", [get(env, context, "model.start_urls")], {"keyword": "url"}, child1, child2);
             inline(env, morph3, context, "text-area-with-button", [], {"placeholder": "Enter one or multiple start page urls here", "action": get(env, context, "startUrlsAction"), "reset": true, "value": get(env, context, "startUrls")});
-            inline(env, morph4, context, "text-field-with-button", [], {"placeholder": "Enter country code", "action": get(env, context, "countryAction"), "reset": true, "value": get(env, context, "countryCode")});
+            inline(env, morph4, context, "item-select", [], {"options": get(env, context, "countryCodes"), "value": get(env, context, "countryCode"), "changed": "addCountryCode", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
             inline(env, morph5, context, "check-box", [], {"checked": get(env, context, "model.performLogin"), "name": "performLoginCheck"});
             inline(env, morph6, context, "inline-help", [], {"message": "perform_login"});
             block(env, morph7, context, "if", [get(env, context, "model.performLogin")], {}, child3, null);
