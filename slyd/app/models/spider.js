@@ -3,7 +3,7 @@ import SimpleModel from './simple-model';
 
 const ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns",
     "js_enable_patterns", "js_disable_patterns", "allowed_domains",
-    "templates", "template_names", "page_actions", 'country_code'
+    "templates", "template_names", "page_actions"
 ];
 
 export default SimpleModel.extend({
