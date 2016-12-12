@@ -13,9 +13,9 @@ LOG_FILE = '/var/kipp/logs/{0}.log'
 USE_SCRAPELY = True
 START_URLS = {1}
 ALLOWED_DOMAINS = {2}
-MERCHANT_URLS_CONFIG = [{{"url": "{1}", 'cookie_config': None}}]
-RULES = [Rule(LxmlLinkExtractor(allow={3},
-                                deny={4}),
+MERCHANT_URLS_CONFIG = [{{"url": "{3}", 'cookie_config': None}}]
+RULES = [Rule(LxmlLinkExtractor(allow={4},
+                                deny={5}),
               callback='parse_item', follow=True)]
 """
 
@@ -132,21 +132,19 @@ class Train(ScrapelyResource):
         :return:
         """
         country_code = spider_spec['country_code']
-        if len(country_code) < 1:
-          raise Exception
-        country_code = country_code[0]
         KIPP_MERCHANT_SETTINGS_DIR = '/apps/kipp/kipp/kipp_base/kipp_settings/%s' % country_code
         if not os.path.exists(KIPP_MERCHANT_SETTINGS_DIR):
           os.makedirs(KIPP_MERCHANT_SETTINGS_DIR)
         MERCHANT_FILE_PATH = KIPP_MERCHANT_SETTINGS_DIR + '/' + merchant_name + '.py'
 
         start_urls = spider_spec['start_urls']
+        merchant_url = spider_spec['start_urls'][0]
         allow_regex = spider_spec['follow_patterns']
         allowed_domains = start_urls[0].split("//")[-1].split("/")[0]
         allowed_domains = [allowed_domains]
         deny_regex = spider_spec['exclude_patterns']
-        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name, start_urls,
-                                  allowed_domains, allow_regex, deny_regex)
+        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name, start_urls, allowed_domains,
+                                  merchant_url, allow_regex, deny_regex)
 
     def _create_setting_file(self, file_path, *args):
         """
@@ -155,6 +153,6 @@ class Train(ScrapelyResource):
         :param args:
         :return:
         """
-        merchant_setting = MECHANT_SETTING_BASE.format(args[0], args[1], args[2], args[3], args[4])
+        merchant_setting = MECHANT_SETTING_BASE.format(args[0], args[1], args[2], args[3], args[4], args[5])
         with open(file_path, 'w') as f:
           f.write(merchant_setting)
