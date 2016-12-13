@@ -303,6 +303,8 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 data = {
                 annotations: {},
                 required: [],
+                is_required: false,
+                weight: 1.0,
                 variant: 0,
                 id: utils['default'].shortGuid(),
                 tagid: element.data('tagid')
@@ -375,7 +377,9 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
         updateAnnotations: function updateAnnotations() {
             var annotations = {},
                 required = [],
-                idMap = this.get('fieldNameIdMap');
+                idMap = this.get('fieldNameIdMap'),
+                is_required = false,
+                weight = 1.0;
             this.get('mappings').forEach(function (annotation) {
                 var attribute = annotation['attribute'],
                     field = annotation['field'];
@@ -389,10 +393,13 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 }
                 if (annotation['required']) {
                     required.push(field);
+                    is_required = true;
                 }
             });
             this.set('data.annotations', annotations);
             this.set('data.required', required);
+            this.set('data.is_required', is_required);
+            this.set('data.weight', weight);
             if (this.get('mappedElement').attr('content')) {
                 this.set('data.text-content', 'text content');
             }
@@ -670,10 +677,14 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
             }
             if (annotation) {
                 var annotations = annotation.annotations || {},
-                    required = annotation.required || [];
+                    required = annotation.required || [],
+                    is_required = annotation.is_required || false,
+                    weight = annotation.weight || 1.0;
                 this.set('data', annotation);
                 this.set('data.annotations', annotations);
                 this.set('data.required', required);
+                this.set('data.is_required', is_required);
+                this.set('data.weight', weight);
                 this.set('data.variant', this.getWithDefault('data.variant', 0));
             } else {
                 this.sendAction('dissmissAllSuggestions');
@@ -9083,7 +9094,7 @@ define('portia-web/models/annotation', ['exports', 'ember', 'portia-web/models/s
 
         idBinding: null,
 
-        serializedProperties: ['id', 'variant', 'annotations', 'required', 'generated'],
+        serializedProperties: ['id', 'variant', 'annotations', 'required', 'generated', 'is_required', 'weight'],
 
         name: (function () {
             var annotations = this.get('annotations');
@@ -9104,6 +9115,10 @@ define('portia-web/models/annotation', ['exports', 'ember', 'portia-web/models/s
         annotations: null,
 
         required: null,
+
+        is_required: false,
+
+        weight: 1.0,
 
         generated: false,
 
@@ -29623,6 +29638,7 @@ define('portia-web/utils/annotation-store', ['exports', 'ember', 'portia-web/mod
         },
 
         saveAll: function saveAll(annotations) {
+            console.log("===================== ana f saveAll ya basha ==========================");
             this._prepareToSave();
             annotations.forEach((function (annotation) {
                 annotation.get('ignores').forEach(function (ignore) {
