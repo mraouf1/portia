@@ -11,7 +11,8 @@ export default SimpleModel.extend({
         'start_urls', 'links_to_follow', 'follow_patterns',
         'js_enabled', 'js_enable_patterns', 'js_disable_patterns',
         'exclude_patterns', 'respect_nofollow', 'init_requests',
-        'template_names', 'page_actions', 'country_code', 'currency_code'],
+        'template_names', 'page_actions', 'country_code', 'currency_code',
+        'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args'],
     serializedRelations: ['templates'],
     start_urls: null,
     country_code: null,
@@ -24,6 +25,10 @@ export default SimpleModel.extend({
     template_names: null,
     init_requests: null,
     page_actions: null,
+    english_url: null,
+    english_url_args: null,
+    arabic_url: null,
+    arabic_url_args: null,
 
     init: function() {
         ARRAY_PROPERTIES.forEach((prop) => {
