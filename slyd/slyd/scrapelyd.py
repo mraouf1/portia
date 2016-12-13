@@ -6,7 +6,7 @@ import errno
 import os
 import json
 
-MECHANT_SETTING_BASE = """
+MERCHANT_SETTING_BASE = """
 # Automatically created by: slyd
 # -*- coding: utf-8 -*-
 LOG_FILE = '/var/kipp/logs/{0}.log'
@@ -143,16 +143,19 @@ class Train(ScrapelyResource):
         allowed_domains = start_urls[0].split("//")[-1].split("/")[0]
         allowed_domains = [allowed_domains]
         deny_regex = spider_spec['exclude_patterns']
-        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name, start_urls, allowed_domains,
-                                  merchant_url, allow_regex, deny_regex)
+        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name=merchant_name, start_urls=start_urls,
+                                  allowed_domains=allowed_domains, merchant_url=merchant_url, allow_regex=allow_regex,
+                                  deny_regex=deny_regex)
 
-    def _create_setting_file(self, file_path, *args):
+    def _create_setting_file(self, file_path, **kwargs):
         """
         create setting file on the disk
         :param file_path:
         :param args:
         :return:
         """
-        merchant_setting = MECHANT_SETTING_BASE.format(args[0], args[1], args[2], args[3], args[4], args[5])
+        merchant_setting = MERCHANT_SETTING_BASE.format(kwargs["merchant_name"], kwargs["start_urls"],
+                                                        kwargs["allowed_domains"], kwargs["merchant_url"],
+                                                        kwargs["allow_regex"], kwargs["deny_regex"])
         with open(file_path, 'w') as f:
-          f.write(merchant_setting)
+            f.write(merchant_setting)
