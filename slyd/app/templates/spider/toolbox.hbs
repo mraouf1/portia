@@ -47,6 +47,11 @@
             {{item-select options=countryCodes value=countryCode changed="addCountryCode" width="82px" name=index addSelected=true}}
         </div>
 
+        <div style="margin-top:10px" class="scrolling-container">
+            <span class="important-label">Select currency code </span>
+            {{item-select options=currencyCodes value=currencyCode changed="addCurrencyCode" width="82px" name=index addSelected=true}}
+        </div>
+
         <div style="margin-top:20px" class="scrolling-container">
             <span class="important-label">Perform login</span>
             {{check-box checked=model.performLogin name="performLoginCheck"}}
