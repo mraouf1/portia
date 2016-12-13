@@ -6517,6 +6517,16 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         countryCodes: ["eg", "sa", "ae"],
         currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
 
+        englishUrl: null,
+        english_url_args: null,
+        arabicUrl: null,
+        arabic_url_args: null,
+
+        englishUrlAction: 'addEnglishUrl',
+        englishUrlArgsAction: 'addEnglishUrlArgs',
+        arabicUrlAction: 'addArabicUrl',
+        arabicUrlArgsAction: 'addArabicUrlArgs',
+
         followPatternOptions: [{ value: 'all', label: 'Follow all in-domain links' }, { value: 'none', label: "Don't follow links" }, { value: 'patterns', label: 'Configure follow and exclude patterns' }],
 
         hasStartUrls: (function () {
@@ -6761,6 +6771,30 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             }
         },
 
+        addEnglishUrl: function addEnglishUrl(url) {
+            if (url) {
+                this.set('model.english_url', url);
+            }
+        },
+
+        addEnglishUrlArgs: function addEnglishUrlArgs(args) {
+            if (args) {
+                this.set('model.english_url_args', args);
+            }
+        },
+
+        addArabicUrl: function addArabicUrl(url) {
+            if (url) {
+                this.set('model.arabic_url', url);
+            }
+        },
+
+        addArabicUrlArgs: function addArabicUrlArgs(args) {
+            if (args) {
+                this.set('model.arabic_url_args', args);
+            }
+        },
+
         addExcludePattern: function addExcludePattern(pattern, index) {
             if (index !== undefined) {
                 this.get('model.exclude_patterns').insertAt(index, pattern);
@@ -6935,6 +6969,22 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
 
             addCurrencyCode: function addCurrencyCode(code) {
                 this.addCurrencyCode(code);
+            },
+
+            addEnglishUrl: function addEnglishUrl(url) {
+                this.addEnglishUrl(url);
+            },
+
+            addEnglishUrlArgs: function addEnglishUrlArgs(args) {
+                this.addEnglishUrlArgs(args);
+            },
+
+            addArabicUrl: function addArabicUrl(url) {
+                this.addArabicUrl(url);
+            },
+
+            addArabicUrlArgs: function addArabicUrlArgs(args) {
+                this.addArabicUrlArgs(args);
             },
 
             deleteStartUrl: function deleteStartUrl(url) {
@@ -9464,7 +9514,7 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
     var ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns", "js_enable_patterns", "js_disable_patterns", "allowed_domains", "templates", "template_names", "page_actions"];
 
     exports['default'] = SimpleModel['default'].extend({
-        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code'],
+        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code', 'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args'],
         serializedRelations: ['templates'],
         start_urls: null,
         country_code: null,
@@ -9477,6 +9527,10 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
         template_names: null,
         init_requests: null,
         page_actions: null,
+        english_url: null,
+        english_url_args: null,
+        arabic_url: null,
+        arabic_url_args: null,
 
         init: function init() {
             var _this = this;
@@ -20188,11 +20242,11 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element11 = dom.childAt(fragment, [1]);
-              var element12 = dom.childAt(element11, [3]);
-              var morph0 = dom.createMorphAt(dom.childAt(element11, [1]),1,1);
-              var morph1 = dom.createMorphAt(element12,1,1);
-              var morph2 = dom.createMorphAt(element12,3,3);
+              var element13 = dom.childAt(fragment, [1]);
+              var element14 = dom.childAt(element13, [3]);
+              var morph0 = dom.createMorphAt(dom.childAt(element13, [1]),1,1);
+              var morph1 = dom.createMorphAt(element14,1,1);
+              var morph2 = dom.createMorphAt(element14,3,3);
               block(env, morph0, context, "bs-button", [], {"clicked": "loadUrl", "clickedParam": get(env, context, "url"), "type": "light", "title": get(env, context, "url"), "popoverPlacement": "left"}, child0, null);
               inline(env, morph1, context, "copy-clipboard", [], {"text": get(env, context, "url")});
               inline(env, morph2, context, "bs-button", [], {"clicked": "deleteStartUrl", "clickedParam": get(env, context, "url"), "icon": "fa fa-icon fa-trash", "type": "danger", "size": "xs"});
@@ -20309,11 +20363,11 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element10 = dom.childAt(fragment, [1]);
-              var morph0 = dom.createMorphAt(element10,3,3);
-              var morph1 = dom.createMorphAt(element10,7,7);
-              var morph2 = dom.createMorphAt(element10,11,11);
-              element(env, element10, context, "bind-attr", [], {"style": "ex_tiny_box_style"});
+              var element12 = dom.childAt(fragment, [1]);
+              var morph0 = dom.createMorphAt(element12,3,3);
+              var morph1 = dom.createMorphAt(element12,7,7);
+              var morph2 = dom.createMorphAt(element12,11,11);
+              element(env, element12, context, "bind-attr", [], {"style": "ex_tiny_box_style"});
               inline(env, morph0, context, "text-field", [], {"value": get(env, context, "loginUrl"), "name": "loginUrl", "width": "94%", "placeholder": "Login URL", "action": "updateLoginInfo", "update": "addInitRequest"});
               inline(env, morph1, context, "text-field", [], {"value": get(env, context, "loginUser"), "name": "loginUser", "width": "94%", "placeholder": "Login user", "action": "updateLoginInfo", "update": "addInitRequest"});
               inline(env, morph2, context, "text-field", [], {"value": get(env, context, "loginPassword"), "name": "loginPassword", "width": "94%", "placeholder": "Login password", "action": "updateLoginInfo", "update": "addInitRequest"});
@@ -20401,7 +20455,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             var el1 = dom.createTextNode("\n\n        ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
-            dom.setAttribute(el1,"style","margin-top:10px");
+            dom.setAttribute(el1,"style","margin-top:5px");
             dom.setAttribute(el1,"class","scrolling-container");
             var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
@@ -20444,6 +20498,8 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
             return el0;
           },
           render: function render(context, env, contextualElement) {
@@ -20466,22 +20522,21 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             } else {
               fragment = this.build(dom);
             }
-            var element13 = dom.childAt(fragment, [1, 3]);
-            var element14 = dom.childAt(fragment, [3]);
-            var element15 = dom.childAt(fragment, [11]);
-            var morph0 = dom.createMorphAt(element13,1,1);
-            var morph1 = dom.createMorphAt(element13,3,3);
-            var morph2 = dom.createMorphAt(element14,1,1);
+            var element15 = dom.childAt(fragment, [1, 3]);
+            var element16 = dom.childAt(fragment, [3]);
+            var element17 = dom.childAt(fragment, [11]);
+            var morph0 = dom.createMorphAt(element15,1,1);
+            var morph1 = dom.createMorphAt(element15,3,3);
+            var morph2 = dom.createMorphAt(element16,1,1);
             var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
             var morph4 = dom.createMorphAt(dom.childAt(fragment, [7]),3,3);
             var morph5 = dom.createMorphAt(dom.childAt(fragment, [9]),3,3);
-            var morph6 = dom.createMorphAt(element15,3,3);
-            var morph7 = dom.createMorphAt(element15,5,5);
+            var morph6 = dom.createMorphAt(element17,3,3);
+            var morph7 = dom.createMorphAt(element17,5,5);
             var morph8 = dom.createMorphAt(fragment,13,13,contextualElement);
-            dom.insertBoundary(fragment, null);
             inline(env, morph0, context, "bs-badge", [], {"class": "pull-right btn-primary", "content": get(env, context, "startUrlCount")});
             block(env, morph1, context, "bs-button", [], {"type": get(env, context, "editAllStartUrlsType"), "clicked": get(env, context, "editAllStartUrlsAction"), "size": "xs", "disabled": get(env, context, "hasStartUrls"), "class": "pull-right"}, child0, null);
-            element(env, element14, context, "bind-attr", [], {"style": "tiny_box_style"});
+            element(env, element16, context, "bind-attr", [], {"style": "tiny_box_style"});
             block(env, morph2, context, "each", [get(env, context, "model.start_urls")], {"keyword": "url"}, child1, child2);
             inline(env, morph3, context, "text-area-with-button", [], {"placeholder": "Enter one or multiple start page urls here", "action": get(env, context, "startUrlsAction"), "reset": true, "value": get(env, context, "startUrls")});
             inline(env, morph4, context, "item-select", [], {"options": get(env, context, "countryCodes"), "value": get(env, context, "countryCode"), "changed": "addCountryCode", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
@@ -20494,6 +20549,133 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
         };
       }());
       var child1 = (function() {
+        return {
+          isHTMLBars: true,
+          revision: "Ember@1.11.4",
+          blockParams: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          build: function build(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:10px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("div");
+            var el3 = dom.createElement("h4");
+            var el4 = dom.createTextNode("English URL: ");
+            dom.appendChild(el3, el4);
+            var el4 = dom.createComment("");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("div");
+            var el3 = dom.createElement("h4");
+            var el4 = dom.createTextNode("English URL args: ");
+            dom.appendChild(el3, el4);
+            var el4 = dom.createComment("");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:20px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("div");
+            var el3 = dom.createElement("h4");
+            var el4 = dom.createTextNode("Arabic URL: ");
+            dom.appendChild(el3, el4);
+            var el4 = dom.createComment("");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("div");
+            var el3 = dom.createElement("h4");
+            var el4 = dom.createTextNode("Arabic URL args: ");
+            dom.appendChild(el3, el4);
+            var el4 = dom.createComment("");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          render: function render(context, env, contextualElement) {
+            var dom = env.dom;
+            var hooks = env.hooks, get = hooks.get, inline = hooks.inline, content = hooks.content;
+            dom.detectNamespace(contextualElement);
+            var fragment;
+            if (env.useFragmentCache && dom.canClone) {
+              if (this.cachedFragment === null) {
+                fragment = this.build(dom);
+                if (this.hasRendered) {
+                  this.cachedFragment = fragment;
+                } else {
+                  this.hasRendered = true;
+                }
+              }
+              if (this.cachedFragment) {
+                fragment = dom.cloneNode(this.cachedFragment, true);
+              }
+            } else {
+              fragment = this.build(dom);
+            }
+            var element10 = dom.childAt(fragment, [1]);
+            var element11 = dom.childAt(fragment, [3]);
+            var morph0 = dom.createMorphAt(element10,1,1);
+            var morph1 = dom.createMorphAt(element10,3,3);
+            var morph2 = dom.createMorphAt(dom.childAt(element10, [5, 0]),1,1);
+            var morph3 = dom.createMorphAt(dom.childAt(element10, [7, 0]),1,1);
+            var morph4 = dom.createMorphAt(element11,1,1);
+            var morph5 = dom.createMorphAt(element11,3,3);
+            var morph6 = dom.createMorphAt(dom.childAt(element11, [5, 0]),1,1);
+            var morph7 = dom.createMorphAt(dom.childAt(element11, [7, 0]),1,1);
+            inline(env, morph0, context, "text-field-with-button", [], {"placeholder": "Enter merchant English url", "action": get(env, context, "englishUrlAction"), "reset": true, "value": get(env, context, "englishUrl")});
+            inline(env, morph1, context, "text-field-with-button", [], {"placeholder": "Enter url args", "action": get(env, context, "englishUrlArgsAction"), "reset": true, "value": get(env, context, "englishUrlArgs")});
+            content(env, morph2, context, "model.english_url");
+            content(env, morph3, context, "model.english_url_args");
+            inline(env, morph4, context, "text-field-with-button", [], {"placeholder": "Enter merchant Arabic url", "action": get(env, context, "arabicUrlAction"), "reset": true, "value": get(env, context, "arabicUrl")});
+            inline(env, morph5, context, "text-field-with-button", [], {"placeholder": "Enter url args", "action": get(env, context, "arabicUrlArgsAction"), "reset": true, "value": get(env, context, "englishUrlArgs")});
+            content(env, morph6, context, "model.arabic_url");
+            content(env, morph7, context, "model.arabic_url_args");
+            return fragment;
+          }
+        };
+      }());
+      var child2 = (function() {
         var child0 = (function() {
           return {
             isHTMLBars: true,
@@ -21342,7 +21524,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           }
         };
       }());
-      var child2 = (function() {
+      var child3 = (function() {
         var child0 = (function() {
           var child0 = (function() {
             return {
@@ -21557,7 +21739,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           }
         };
       }());
-      var child3 = (function() {
+      var child4 = (function() {
         var child0 = (function() {
           var child0 = (function() {
             var child0 = (function() {
@@ -21820,6 +22002,8 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           var el0 = dom.createDocumentFragment();
           var el1 = dom.createComment("");
           dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
           var el1 = dom.createTextNode("\n");
           dom.appendChild(el0, el1);
           var el1 = dom.createComment("");
@@ -21855,15 +22039,17 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             fragment = this.build(dom);
           }
           var morph0 = dom.createMorphAt(fragment,0,0,contextualElement);
-          var morph1 = dom.createMorphAt(fragment,2,2,contextualElement);
-          var morph2 = dom.createMorphAt(fragment,4,4,contextualElement);
-          var morph3 = dom.createMorphAt(fragment,6,6,contextualElement);
+          var morph1 = dom.createMorphAt(fragment,1,1,contextualElement);
+          var morph2 = dom.createMorphAt(fragment,3,3,contextualElement);
+          var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
+          var morph4 = dom.createMorphAt(fragment,7,7,contextualElement);
           dom.insertBoundary(fragment, null);
           dom.insertBoundary(fragment, 0);
           block(env, morph0, context, "accordion-item", [], {"title": "Initialization"}, child0, null);
-          block(env, morph1, context, "accordion-item", [], {"title": "Crawling"}, child1, null);
-          block(env, morph2, context, "accordion-item", [], {"title": "Samples"}, child2, null);
-          block(env, morph3, context, "if", [get(env, context, "pageActionsEnabled")], {}, child3, null);
+          block(env, morph1, context, "accordion-item", [], {"title": "Language"}, child1, null);
+          block(env, morph2, context, "accordion-item", [], {"title": "Crawling"}, child2, null);
+          block(env, morph3, context, "accordion-item", [], {"title": "Samples"}, child3, null);
+          block(env, morph4, context, "if", [get(env, context, "pageActionsEnabled")], {}, child4, null);
           return fragment;
         }
       };
