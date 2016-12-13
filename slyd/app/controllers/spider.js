@@ -37,6 +37,16 @@ export default BaseController.extend({
     countryCodes: ["eg", "sa", "ae"],
     currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
 
+    englishUrl: null,
+    english_url_args: null,
+    arabicUrl: null,
+    arabic_url_args: null,
+
+    englishUrlAction: 'addEnglishUrl',
+    englishUrlArgsAction: 'addEnglishUrlArgs',
+    arabicUrlAction: 'addArabicUrl',
+    arabicUrlArgsAction: 'addArabicUrlArgs',
+
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
         { value: 'none', label: "Don't follow links" },
@@ -300,6 +310,30 @@ export default BaseController.extend({
         }
     },
 
+    addEnglishUrl: function(url){
+        if(url) {
+            this.set('model.english_url', url);
+        }
+    },
+
+    addEnglishUrlArgs: function(args){
+        if(args) {
+            this.set('model.english_url_args', args);
+        }
+    },
+
+    addArabicUrl: function(url){
+        if(url) {
+            this.set('model.arabic_url', url);
+        }
+    },
+
+    addArabicUrlArgs: function(args){
+        if(args) {
+            this.set('model.arabic_url_args', args);
+        }
+    },
+
     addExcludePattern: function(pattern, index) {
         if (index !== undefined) {
             this.get('model.exclude_patterns').insertAt(index, pattern);
@@ -467,6 +501,22 @@ export default BaseController.extend({
 
         addCurrencyCode: function(code) {
             this.addCurrencyCode(code);
+        },
+
+        addEnglishUrl: function(url){
+            this.addEnglishUrl(url);
+        },
+
+        addEnglishUrlArgs: function(args){
+            this.addEnglishUrlArgs(args);
+        },
+
+        addArabicUrl: function(url){
+            this.addArabicUrl(url);
+        },
+
+        addArabicUrlArgs: function(args){
+            this.addArabicUrlArgs(args);
         },
 
         deleteStartUrl: function(url) {
