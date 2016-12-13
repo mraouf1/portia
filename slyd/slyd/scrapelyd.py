@@ -11,6 +11,7 @@ MERCHANT_SETTING_BASE = """
 # -*- coding: utf-8 -*-
 LOG_FILE = '/var/kipp/logs/{merchant_name}.log'
 COUNTRY_CODE = "{country_code}"
+CURRENCY_CODE = "{currency_code}"
 USE_SCRAPELY = True
 START_URLS = {start_urls}
 ALLOWED_DOMAINS = {allowed_domains}
@@ -138,15 +139,16 @@ class Train(ScrapelyResource):
           os.makedirs(KIPP_MERCHANT_SETTINGS_DIR)
         MERCHANT_FILE_PATH = KIPP_MERCHANT_SETTINGS_DIR + '/' + merchant_name + '.py'
         country_code = spider_spec['country_code']
+        currency_code = spider_spec['currency_code']
         start_urls = spider_spec['start_urls']
         merchant_url = spider_spec['start_urls'][0]
         allow_regex = spider_spec['follow_patterns']
         allowed_domains = start_urls[0].split("//")[-1].split("/")[0].replace("www.","")
         allowed_domains = [allowed_domains]
         deny_regex = spider_spec['exclude_patterns']
-        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name=merchant_name, country_code= country_code,
+        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name=merchant_name, country_code=country_code,
                                   start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
-                                  allow_regex=allow_regex, deny_regex=deny_regex)
+                                  allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code)
 
     def _create_setting_file(self, file_path, **kwargs):
         """
