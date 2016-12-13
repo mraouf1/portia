@@ -22,6 +22,7 @@ RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
 """
 
 SCRAPELY_TEMPLATES_DIR = '/var/kipp/scrapely_templates'
+KIPP_MERCHANT_SETTINGS_DIR = '/apps/kipp/kipp/kipp_base/kipp_settings/{country_code}'
 if not os.path.exists(SCRAPELY_TEMPLATES_DIR):
     os.makedirs(SCRAPELY_TEMPLATES_DIR)
 
@@ -134,10 +135,10 @@ class Train(ScrapelyResource):
         :return:
         """
         country_code = spider_spec['country_code']
-        KIPP_MERCHANT_SETTINGS_DIR = '/apps/kipp/kipp/kipp_base/kipp_settings/%s' % country_code
-        if not os.path.exists(KIPP_MERCHANT_SETTINGS_DIR):
+        kipp_country_setting_dir = KIPP_MERCHANT_SETTINGS_DIR.format(country_code=country_code)
+        if not os.path.exists(kipp_country_setting_dir):
           os.makedirs(KIPP_MERCHANT_SETTINGS_DIR)
-        MERCHANT_FILE_PATH = KIPP_MERCHANT_SETTINGS_DIR + '/' + merchant_name + '.py'
+        merchant_file_path = kipp_country_setting_dir + '/' + merchant_name + '.py'
         country_code = spider_spec['country_code']
         currency_code = spider_spec['currency_code']
         start_urls = spider_spec['start_urls']
@@ -146,7 +147,7 @@ class Train(ScrapelyResource):
         allowed_domains = start_urls[0].split("//")[-1].split("/")[0].replace("www.","")
         allowed_domains = [allowed_domains]
         deny_regex = spider_spec['exclude_patterns']
-        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name=merchant_name, country_code=country_code,
+        self._create_setting_file(merchant_file_path, merchant_name=merchant_name, country_code=country_code,
                                   start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
                                   allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code)
 
