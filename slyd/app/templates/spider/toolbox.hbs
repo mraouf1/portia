@@ -47,7 +47,7 @@
             {{item-select options=countryCodes value=countryCode changed="addCountryCode" width="82px" name=index addSelected=true}}
         </div>
 
-        <div style="margin-top:10px" class="scrolling-container">
+        <div style="margin-top:5px" class="scrolling-container">
             <span class="important-label">Select currency code </span>
             {{item-select options=currencyCodes value=currencyCode changed="addCurrencyCode" width="82px" name=index addSelected=true}}
         </div>
@@ -68,6 +68,21 @@
                 {{text-field value=loginPassword name='loginPassword' width='94%' placeholder='Login password' action='updateLoginInfo' update='addInitRequest'}}
             </div>
         {{/if}}
+
+    {{/accordion-item}}
+        {{#accordion-item title="Language"}}
+            <div style="margin-top:10px" class="scrolling-container">
+                {{text-field-with-button placeholder='Enter merchant English url' action=englishUrlAction reset=true value=englishUrl}}
+                {{text-field-with-button placeholder='Enter url args' action=englishUrlArgsAction reset=true value=englishUrlArgs}}
+                <div><h4>English URL: {{model.english_url}}</h4></div>
+                <div><h4>English URL args: {{model.english_url_args}}</h4></div>
+            </div>
+            <div style="margin-top:20px" class="scrolling-container">
+                {{text-field-with-button placeholder='Enter merchant Arabic url' action=arabicUrlAction reset=true value=arabicUrl}}
+                {{text-field-with-button placeholder='Enter url args' action=arabicUrlArgsAction reset=true value=englishUrlArgs}}
+                <div><h4>Arabic URL: {{model.arabic_url}}</h4></div>
+                <div><h4>Arabic URL args: {{model.arabic_url_args}}</h4></div>
+            </div>
     {{/accordion-item}}
 
     {{#accordion-item title="Crawling"}}
