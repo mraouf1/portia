@@ -19,6 +19,18 @@ MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': None}}]
 RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
                                 deny={deny_regex}),
               callback='parse_item', follow=True)]
+localization_config = {{
+    'english': {{
+        'url': "{english_url}",
+        'cookie_config': None,
+        'url_args': "{english_url_args}"
+    }},
+    'arabic': {{
+        'url': "{arabic_url}",
+        'cookie_config': None,
+        'url_args': "{arabic_url_args}"
+    }}
+}}
 """
 
 SCRAPELY_TEMPLATES_DIR = '/var/kipp/scrapely_templates'
@@ -147,9 +159,15 @@ class Train(ScrapelyResource):
         allowed_domains = start_urls[0].split("//")[-1].split("/")[0].replace("www.","")
         allowed_domains = [allowed_domains]
         deny_regex = spider_spec['exclude_patterns']
+        english_url = spider_spec['english_url']
+        arabic_url = spider_spec['arabic_url']
+        english_url_args = spider_spec['english_url_args']
+        arabic_url_args = spider_spec['arabic_url_args']
         self._create_setting_file(merchant_file_path, merchant_name=merchant_name, country_code=country_code,
                                   start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
-                                  allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code)
+                                  allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code,
+                                  english_url=english_url, arabic_url=arabic_url, english_url_args=english_url_args,
+                                  arabic_url_args= arabic_url_args)
 
     def _create_setting_file(self, file_path, **kwargs):
         """
