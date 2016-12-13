@@ -34,6 +34,9 @@ export default BaseController.extend({
     editAllStartUrlsAction: 'editAllStartUrls',
     editAllStartUrlsText: 'Edit All',
 
+    countryCodes: ["eg", "sa", "ae"],
+    currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
+
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
         { value: 'none', label: "Don't follow links" },
@@ -285,6 +288,18 @@ export default BaseController.extend({
         });
     },
 
+    addCountryCode: function(code) {
+        if (code) {
+            this.set('model.country_code', code);
+        }
+    },
+
+    addCurrencyCode: function(code) {
+        if (code) {
+            this.set('model.currency_code', code);
+        }
+    },
+
     addExcludePattern: function(pattern, index) {
         if (index !== undefined) {
             this.get('model.exclude_patterns').insertAt(index, pattern);
@@ -444,6 +459,14 @@ export default BaseController.extend({
 
         addStartUrls: function(urls) {
             this.addStartUrls(urls);
+        },
+
+        addCountryCode: function(code) {
+            this.addCountryCode(code);
+        },
+
+        addCurrencyCode: function(code) {
+            this.addCurrencyCode(code);
         },
 
         deleteStartUrl: function(url) {
