@@ -9,13 +9,14 @@ import json
 MERCHANT_SETTING_BASE = """
 # Automatically created by: slyd
 # -*- coding: utf-8 -*-
-LOG_FILE = '/var/kipp/logs/{0}.log'
+LOG_FILE = '/var/kipp/logs/{merchant_name}.log'
+COUNTRY_CODE = "{country_code}"
 USE_SCRAPELY = True
-START_URLS = {1}
-ALLOWED_DOMAINS = {2}
-MERCHANT_URLS_CONFIG = [{{"url": "{3}", 'cookie_config': None}}]
-RULES = [Rule(LxmlLinkExtractor(allow={4},
-                                deny={5}),
+START_URLS = {start_urls}
+ALLOWED_DOMAINS = {allowed_domains}
+MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': None}}]
+RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
+                                deny={deny_regex}),
               callback='parse_item', follow=True)]
 """
 
@@ -136,16 +137,16 @@ class Train(ScrapelyResource):
         if not os.path.exists(KIPP_MERCHANT_SETTINGS_DIR):
           os.makedirs(KIPP_MERCHANT_SETTINGS_DIR)
         MERCHANT_FILE_PATH = KIPP_MERCHANT_SETTINGS_DIR + '/' + merchant_name + '.py'
-
+        country_code = spider_spec['country_code']
         start_urls = spider_spec['start_urls']
         merchant_url = spider_spec['start_urls'][0]
         allow_regex = spider_spec['follow_patterns']
-        allowed_domains = start_urls[0].split("//")[-1].split("/")[0]
+        allowed_domains = start_urls[0].split("//")[-1].split("/")[0].replace("www.","")
         allowed_domains = [allowed_domains]
         deny_regex = spider_spec['exclude_patterns']
-        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name=merchant_name, start_urls=start_urls,
-                                  allowed_domains=allowed_domains, merchant_url=merchant_url, allow_regex=allow_regex,
-                                  deny_regex=deny_regex)
+        self._create_setting_file(MERCHANT_FILE_PATH, merchant_name=merchant_name, country_code= country_code,
+                                  start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
+                                  allow_regex=allow_regex, deny_regex=deny_regex)
 
     def _create_setting_file(self, file_path, **kwargs):
         """
@@ -154,8 +155,6 @@ class Train(ScrapelyResource):
         :param args:
         :return:
         """
-        merchant_setting = MERCHANT_SETTING_BASE.format(kwargs["merchant_name"], kwargs["start_urls"],
-                                                        kwargs["allowed_domains"], kwargs["merchant_url"],
-                                                        kwargs["allow_regex"], kwargs["deny_regex"])
+        merchant_setting = MERCHANT_SETTING_BASE.format(**kwargs)
         with open(file_path, 'w') as f:
             f.write(merchant_setting)
