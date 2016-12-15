@@ -106,9 +106,10 @@
         <div style="margin-top:10px"></div>
         <div class="row">
             <div class="col-md-3 small-label">Attribute</div>
-            <div class="col-md-4 small-label">Value</div>
+            <div class="col-md-2 small-label">Value</div>
             <div class="col-md-2 small-label">Field</div>
-            <div class="col-md-3 small-label">Required</div>
+            <div class="col-md-2 small-label">Weight</div>
+            <div class="col-md-2 small-label">Required</div>
         </div>
         <div style="margin-top:10px"></div>
         <div class="scrolling-container" style="max-height: 100px;">
@@ -117,13 +118,16 @@
                     <div class="col-md-3">
                         {{item-select options=attributes value=annotation.attribute changed="updateAttribute" width="82px" name=index addSelected=true}}
                     </div>
-                    <div class="col-md-4" style="width:115px;max-height:80px;overflow:hidden;text-overflow:ellipsis;">
+                    <div class="col-md-2" style="max-height:80px;overflow:hidden;text-overflow:ellipsis;">
                         {{collapsible-text fullText=annotation.content trimTo=100 title=annotation.content}}
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         {{item-select options=itemFields value=annotation.field changed="updateField" width="82px" name=index}}
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
+                        {{item-select options=weightFields value=annotation.weight changed="updateWeight" width="50px" name=index addSelected=true}}
+                    </div>
+                    <div class="col-md-2">
                         {{check-box checked=annotation.required action="updateRequired" name=index value=annotation.required style="margin:3px;"}}
                         {{bs-button clicked="removeMapping" clickedParam=index icon="fa fa-icon fa-times" size="xs" type="danger" title="Remove Mapping"}}
                     </div>
