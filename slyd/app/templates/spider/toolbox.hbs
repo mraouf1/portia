@@ -72,17 +72,41 @@
     {{/accordion-item}}
         {{#accordion-item title="Language"}}
             <div style="margin-top:10px" class="scrolling-container">
-                {{text-field-with-button placeholder='Enter merchant English url' action=englishUrlAction reset=true value=englishUrl}}
-                {{text-field-with-button placeholder='Enter url args' action=englishUrlArgsAction reset=true value=englishUrlArgs}}
-                <div><h4>English URL: {{model.english_url}}</h4></div>
-                <div><h4>English URL args: {{model.english_url_args}}</h4></div>
+                <h4>English URL configuration </h4>
+                {{text-field placeholder='Enter merchant English url' action=englishUrlAction update=englishUrlAction reset=true value=englishUrl width='94%'}}
+                {{text-field placeholder='Enter url args' action=englishUrlArgsAction update=englishUrlArgsAction reset=true value=englishUrlArgs width='94%'}}
             </div>
             <div style="margin-top:20px" class="scrolling-container">
-                {{text-field-with-button placeholder='Enter merchant Arabic url' action=arabicUrlAction reset=true value=arabicUrl}}
-                {{text-field-with-button placeholder='Enter url args' action=arabicUrlArgsAction reset=true value=englishUrlArgs}}
-                <div><h4>Arabic URL: {{model.arabic_url}}</h4></div>
-                <div><h4>Arabic URL args: {{model.arabic_url_args}}</h4></div>
+                <h4>Arabic URL configuration </h4>
+                {{text-field placeholder='Enter merchant Arabic url' action=arabicUrlAction update=arabicUrlAction reset=true value=arabicUrl width='94%'}}
+                {{text-field placeholder='Enter url args' action=arabicUrlArgsAction update=arabicUrlArgsAction reset=true value=arabicUrlArgs width='94%'}}
             </div>
+
+            <div style="margin-top:20px" class="scrolling-container">
+                <span class="important-label">Use Cookies</span>
+                {{check-box checked=model.cookies_enabled action=toggleCookiesAction}}
+            </div>
+
+            {{#if model.cookies_enabled}}
+                <div style="margin-top:20px" class="scrolling-container">
+                    <h4>English cookie configuration </h4>
+                    {{text-field placeholder='Enter cookie name' action=enCookieNameAction update=enCookieNameAction reset=true value=enCookieName width='40%'}}
+                    {{text-field placeholder='Enter cookie value' action=enCookieValueAction update=enCookieValueAction reset=true value=enCookieValue width='40%'}}
+                </div>
+
+                 <div style="margin-top:20px" class="scrolling-container">
+                     <h4>Arabic cookie configuration </h4>
+                    {{text-field placeholder='Enter cookie name' action=arCookieNameAction update=arCookieNameAction reset=true value=arCookieName width='40%'}}
+                    {{text-field placeholder='Enter cookie value' action=arCookieValueAction update=arCookieValueAction reset=true value=arCookieValue width='40%'}}
+                </div>
+
+                <div style="margin-top:20px" class="btn-center">
+                    {{#bs-button clicked="detectCookies" clickedParam=this type="primary" title="Detect Cookies"}}
+                        Detect Cookies
+                    {{/bs-button}}
+                </div>
+            {{/if}}
+
     {{/accordion-item}}
 
     {{#accordion-item title="Crawling"}}
