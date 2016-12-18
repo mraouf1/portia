@@ -37,15 +37,49 @@ export default BaseController.extend({
     countryCodes: ["eg", "sa", "ae"],
     currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
 
-    englishUrl: null,
-    english_url_args: null,
-    arabicUrl: null,
-    arabic_url_args: null,
+    englishUrl: function(){
+        return this.get('model.english_url');
+    }.property('model.english_url'),
+
+    englishUrlArgs: function(){
+        return this.get('model.english_url_args');
+    }.property('model.english_url_args'),
+
+    arabicUrl: function(){
+        return this.get('model.arabic_url');
+    }.property('model.arabic_url'),
+
+    arabicUrlArgs: function(){
+        return this.get('model.arabic_url_args');
+    }.property('model.arabic_url_args'),
 
     englishUrlAction: 'addEnglishUrl',
     englishUrlArgsAction: 'addEnglishUrlArgs',
     arabicUrlAction: 'addArabicUrl',
     arabicUrlArgsAction: 'addArabicUrlArgs',
+
+    toggleCookiesAction: 'toggleCookies',
+
+    enCookieName: function(){
+        return this.get('model.english_cookie_name');
+    }.property('model.english_cookie_name'),
+
+    enCookieValue: function(){
+        return this.get('model.english_cookie_value');
+    }.property('model.english_cookie_value'),
+
+    arCookieName: function(){
+        return this.get('model.arabic_cookie_name');
+    }.property('model.arabic_cookie_name'),
+
+    arCookieValue: function(){
+        return this.get('model.arabic_cookie_value');
+    }.property('model.arabic_cookie_value'),
+
+    enCookieNameAction: 'addEnCookieName',
+    enCookieValueAction: 'addEnCookieValue',
+    arCookieNameAction: 'addArCookieName',
+    arCookieValueAction: 'addArCookieValue',
 
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
@@ -163,6 +197,18 @@ export default BaseController.extend({
     loginPassword: function() {
         return this._get_init_request_property('password');
     }.property('model.init_requests'),
+
+    getCookies: function() {
+        if(this.get('model.cookies_enabled')) {
+            var iframe = document.getElementById('scraped-doc-iframe')
+            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+            console.log(iframe);
+
+            var url = iframe.contentWindow.location.href;
+            console.log('1111111111111111111111111111111111');
+            console.log(url);
+        }
+    },
 
     spiderDomains: function() {
         var spiderDomains = new Set();
@@ -331,6 +377,46 @@ export default BaseController.extend({
     addArabicUrlArgs: function(args){
         if(args) {
             this.set('model.arabic_url_args', args);
+        }
+    },
+
+    toggleCookies: function(){
+        if(this.get('model.cookies_enabled')){
+            this.set('model.cookies_enabled', false);
+        }else{
+            this.set('model.cookies_enabled', true);
+        }
+    },
+
+    addEnCookieName: function(name){
+        if(name){
+            this.set('model.english_cookie_name', name);
+        }else{
+            this.set('model.english_cookie_name', '');
+        }
+    },
+
+    addEnCookieValue: function(value){
+        if(value){
+            this.set('model.english_cookie_value', value);
+        }else{
+            this.set('model.english_cookie_value', '');
+        }
+    },
+
+    addArCookieName: function(name){
+        if(name){
+            this.set('model.arabic_cookie_name', name);
+        }else{
+            this.set('model.arabic_cookie_name', '');
+        }
+    },
+
+    addArCookieValue: function(value){
+        if(name){
+            this.set('model.arabic_cookie_value', value);
+        }else{
+            this.set('model.arabic_cookie_value', value);
         }
     },
 
@@ -517,6 +603,30 @@ export default BaseController.extend({
 
         addArabicUrlArgs: function(args){
             this.addArabicUrlArgs(args);
+        },
+
+        toggleCookies: function(){
+            this.toggleCookies();
+        },
+
+        addEnCookieName: function(name){
+            this.addEnCookieName(name);
+        },
+
+        addEnCookieValue: function(value){
+            this.addEnCookieValue(value);
+        },
+
+        addArCookieName: function(name){
+            this.addArCookieName(name);
+        },
+
+        addArCookieValue: function(value){
+            this.addArCookieValue(value);
+        },
+
+        detectCookies: function(){
+            this.getCookies();
         },
 
         deleteStartUrl: function(url) {
