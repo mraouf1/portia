@@ -33,6 +33,33 @@ localization_config = {{
 }}
 """
 
+MERCHANT_SETTING_BASE_COOKIES_ENABLED = """
+# Automatically created by: slyd
+# -*- coding: utf-8 -*-
+LOG_FILE = '/var/kipp/logs/{merchant_name}.log'
+COUNTRY_CODE = "{country_code}"
+CURRENCY_CODE = "{currency_code}"
+USE_SCRAPELY = True
+START_URLS = {start_urls}
+ALLOWED_DOMAINS = {allowed_domains}
+MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': {{'name':"{english_cookie_name}", 'value': "{english_cookie_value}", 'domain': ".{allowed_domains[0]}", 'path': '/'}} }}]
+RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
+                                deny={deny_regex}),
+              callback='parse_item', follow=True)]
+localization_config = {{
+    'english': {{
+        'url': "{english_url}",
+        'cookie_config': [{{'name':"{english_cookie_name}", 'value': "{english_cookie_value}", 'domain': ".{allowed_domains[0]}", 'path': '/'}}],
+        'url_args': "{english_url_args}"
+    }},
+    'arabic': {{
+        'url': "{arabic_url}",
+        'cookie_config': [{{'name':"{arabic_cookie_name}", 'value': "{arabic_cookie_value}", 'domain': '.{allowed_domains[0]}', 'path': '/'}}],
+        'url_args': "{arabic_url_args}"
+    }}
+}}
+"""
+
 SCRAPELY_TEMPLATES_DIR = '/var/kipp/scrapely_templates'
 KIPP_MERCHANT_SETTINGS_DIR = '/apps/kipp/kipp/kipp_base/kipp_settings/{country_code}'
 if not os.path.exists(SCRAPELY_TEMPLATES_DIR):
@@ -163,11 +190,18 @@ class Train(ScrapelyResource):
         arabic_url = spider_spec['arabic_url']
         english_url_args = spider_spec['english_url_args']
         arabic_url_args = spider_spec['arabic_url_args']
+        english_cookie_name = spider_spec['english_cookie_name']
+        english_cookie_value = spider_spec['english_cookie_value']
+        arabic_cookie_name = spider_spec['english_url_args']
+        arabic_cookie_value = spider_spec['arabic_cookie_value']
+        cookies_enabled = spider_spec['cookies_enabled']
         self._create_setting_file(merchant_file_path, merchant_name=merchant_name, country_code=country_code,
                                   start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
                                   allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code,
                                   english_url=english_url, arabic_url=arabic_url, english_url_args=english_url_args,
-                                  arabic_url_args= arabic_url_args)
+                                  arabic_url_args= arabic_url_args, english_cookie_name=english_cookie_name,
+                                  english_cookie_value=english_cookie_value, arabic_cookie_name=arabic_cookie_name,
+                                  arabic_cookie_value=arabic_cookie_value, cookies_enabled=cookies_enabled)
 
     def _create_setting_file(self, file_path, **kwargs):
         """
@@ -176,6 +210,9 @@ class Train(ScrapelyResource):
         :param args:
         :return:
         """
-        merchant_setting = MERCHANT_SETTING_BASE.format(**kwargs)
+        if kwargs['cookies_enabled']:
+            merchant_setting = MERCHANT_SETTING_BASE_COOKIES_ENABLED.format(**kwargs)
+        else:
+            merchant_setting = MERCHANT_SETTING_BASE.format(**kwargs)
         with open(file_path, 'w') as f:
             f.write(merchant_setting)
