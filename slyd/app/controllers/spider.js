@@ -200,14 +200,42 @@ export default BaseController.extend({
 
     getCookies: function() {
         if(this.get('model.cookies_enabled')) {
-            var iframe = document.getElementById('scraped-doc-iframe')
-            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
-            console.log(iframe);
-
-            var url = iframe.contentWindow.location.href;
-            console.log('1111111111111111111111111111111111');
-            console.log(url);
+            var currentUrl = this.get('currentUrl');
+            this.get('documentView').hideLoading();
+            this.set('testing', false);
+            this.showSuccessNotification("Training scrapely started",
+                              "The training process of scrapely is started successfully");
+            this.get('slyd').getCookies(currentUrl).then((cookies)=>{
+            this.generateTable(cookies);
+            },
+            () => { this.showSuccessNotification("Training scrapely finished",
+                "The training process of scrapely is finished successfully");}).catch(function(err){
+                throw err;
+            });
         }
+    },
+
+    generateTable: function(cookies) {
+        console.log(cookies);
+        var table = document.createElement("TABLE");
+        table.border = "1";
+        for (var key in cookies) {
+            if(cookies.hasOwnProperty(key)){
+                var cookie = cookies[key];
+                for (var prop in cookie) {
+                    if(cookie.hasOwnProperty(prop)){
+                        var row = table.insertRow(-1);
+                        var cell1 = row.insertCell(-1);
+                        cell1.innerHTML = prop;
+                        var cell2 = row.insertCell(-1);
+                        cell2.innerHTML = cookie[prop];
+                    }
+                }
+            }
+        }
+        var dvTable = document.getElementById("dvTable");
+        dvTable.innerHTML = "";
+        dvTable.appendChild(table);
     },
 
     spiderDomains: function() {
@@ -706,6 +734,19 @@ export default BaseController.extend({
                     this.showErrorNotification(err.toString());
                 }.bind(this)
             );
+        },
+
+        getCookies: function() {
+            if (this.get('testing')) {
+                this.get('pendingUrls').clear();
+            } else {
+                this.set('testing', true);
+                this.get('documentView').showLoading();
+                this.get('extractedItems').clear();
+                this.set('showItems', true);
+                this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
+                this.getCookies();
+            }
         },
 
         testSpider: function() {
