@@ -36,11 +36,13 @@ except ImportError:
 from slybot.spider import IblSpider
 from .html import html4annotation, extract_html
 from .resource import SlydJsonResource
-
+import urllib2
+import cookielib
 
 def create_bot_resource(spec_manager):
     bot = Bot(spec_manager.settings, spec_manager)
     bot.putChild('fetch', Fetch(bot))
+    bot.putChild('getCookies', GetCookies(bot))
     return bot
 
 
@@ -72,6 +74,33 @@ class BotResource(SlydJsonResource):
     def __init__(self, bot):
         Resource.__init__(self)
         self.bot = bot
+
+
+class GetCookies(BotResource):
+    isLeaf = True
+
+    def render_POST(self, request):
+        params = self.read_json(request)
+        current_url = params.get('current_url')
+        cookies = cookielib.LWPCookieJar()
+        handlers = [
+          urllib2.HTTPHandler(),
+          urllib2.HTTPSHandler(),
+          urllib2.HTTPCookieProcessor(cookies)
+        ]
+        opener = urllib2.build_opener(*handlers)
+        self._fetch(current_url, opener)
+        return self._dump(cookies)
+
+
+    def _fetch(self, url, opener):
+        request = urllib2.Request(url)
+        request.add_header('User-agent', 'Mozilla/5.0')
+        return opener.open(request)
+
+    def _dump(self, cookies):
+        cookies_list = [{cookie.name: cookie.value}for cookie in cookies]
+        return json.dumps(cookies_list, encoding='UTF-8', default=str)
 
 
 class Fetch(BotResource):
