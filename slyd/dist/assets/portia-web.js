@@ -6670,15 +6670,44 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         }).property('model.init_requests'),
 
         getCookies: function getCookies() {
-            if (this.get('model.cookies_enabled')) {
-                var iframe = document.getElementById('scraped-doc-iframe').documentWindow;
-                console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
-                console.log(iframe);
+            var _this = this;
 
-                var url = iframe.location.href;
-                console.log('1111111111111111111111111111111111');
-                console.log(url);
+            if (this.get('model.cookies_enabled')) {
+                var currentUrl = this.get('currentUrl');
+                this.get('documentView').hideLoading();
+                this.set('testing', false);
+                this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
+                this.get('slyd').getCookies(currentUrl).then(function (cookies) {
+                    _this.generateTable(cookies);
+                }, function () {
+                    _this.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+                })['catch'](function (err) {
+                    throw err;
+                });
             }
+        },
+
+        generateTable: function generateTable(cookies) {
+            console.log(cookies);
+            var table = document.createElement("TABLE");
+            table.border = "1";
+            for (var key in cookies) {
+                if (cookies.hasOwnProperty(key)) {
+                    var cookie = cookies[key];
+                    for (var prop in cookie) {
+                        if (cookie.hasOwnProperty(prop)) {
+                            var row = table.insertRow(-1);
+                            var cell1 = row.insertCell(-1);
+                            cell1.innerHTML = prop;
+                            var cell2 = row.insertCell(-1);
+                            cell2.innerHTML = cookie[prop];
+                        }
+                    }
+                }
+            }
+            var dvTable = document.getElementById("dvTable");
+            dvTable.innerHTML = "";
+            dvTable.appendChild(table);
         },
 
         spiderDomains: (function () {
@@ -6750,7 +6779,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         addTemplate: function addTemplate() {
-            var _this = this;
+            var _this2 = this;
 
             var iframeTitle = this.get('documentView').getIframe()[0].title.trim().replace(/[^a-z\s_-]/ig, '').replace(/\s+/g, '_').substring(0, 48).replace(/_+$/, '') || utils['default'].shortGuid();
 
@@ -6781,14 +6810,14 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             var serialized = template.serialize();
             serialized._new = true;
             this.get('ws').save('template', serialized).then(function (data) {
-                var mutations = _this.get('documentView.mutationsAfterLoaded');
+                var mutations = _this2.get('documentView.mutationsAfterLoaded');
                 if (!data.saved.template._uses_js && mutations > 1) {
-                    _this.showWarningNotification('JavaScript is disabled', _this.get('messages.template_js_disabled'));
+                    _this2.showWarningNotification('JavaScript is disabled', _this2.get('messages.template_js_disabled'));
                 }
             }).then(function () {
-                return _this.saveSpider(true);
+                return _this2.saveSpider(true);
             }).then(function () {
-                _this.editTemplate(template_name);
+                _this2.editTemplate(template_name);
             });
         },
 
@@ -6914,7 +6943,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         }).observes('model'),
 
         saveSpider: function saveSpider() {
-            var _this2 = this;
+            var _this3 = this;
 
             var force = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
 
@@ -6923,25 +6952,25 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             }
             this.set('saving', true);
             return this.get('ws').save('spider', this.get('model'))['finally'](function () {
-                if (!_this2.isDestroying) {
-                    _this2.set('saving', false);
+                if (!_this3.isDestroying) {
+                    _this3.set('saving', false);
                 }
             });
         },
 
         testSpider: function testSpider() {
-            var _this3 = this;
+            var _this4 = this;
 
             var urls = this.get('pendingUrls');
 
             var addItems = function addItems(data) {
-                var items = (data.items || []).map(_this3.wrapItem, _this3);
-                _this3.get('extractedItems').pushObjects(items);
+                var items = (data.items || []).map(_this4.wrapItem, _this4);
+                _this4.get('extractedItems').pushObjects(items);
             };
 
             var fetchNext = function fetchNext() {
                 if (urls.length) {
-                    return _this3.get('slyd').fetchDocument(urls.pop(), _this3.get('model.name')).then(addItems, utils['default'].showErrorNotification).then(fetchNext);
+                    return _this4.get('slyd').fetchDocument(urls.pop(), _this4.get('model.name')).then(addItems, utils['default'].showErrorNotification).then(fetchNext);
                 } else {
                     return new Ember['default'].RSVP.Promise(function (resolve) {
                         return resolve('done');
@@ -6950,13 +6979,13 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             };
 
             fetchNext().then(function () {
-                _this3.get('documentView').hideLoading();
-                _this3.set('testing', false);
+                _this4.get('documentView').hideLoading();
+                _this4.set('testing', false);
             });
         },
 
         trainScrapely: function trainScrapely() {
-            var _this4 = this;
+            var _this5 = this;
 
             var result = null;
 
@@ -6965,7 +6994,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
 
             result = this.get('slyd').trainScrapely(this.get('model.name')).then(function () {
-                _this4.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+                _this5.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
             })['catch'](function (err) {
                 throw err;
             });
@@ -7173,6 +7202,19 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
                 }).bind(this));
             },
 
+            getCookies: function getCookies() {
+                if (this.get('testing')) {
+                    this.get('pendingUrls').clear();
+                } else {
+                    this.set('testing', true);
+                    this.get('documentView').showLoading();
+                    this.get('extractedItems').clear();
+                    this.set('showItems', true);
+                    this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
+                    this.getCookies();
+                }
+            },
+
             testSpider: function testSpider() {
                 if (this.get('testing')) {
                     this.get('pendingUrls').clear();
@@ -7259,7 +7301,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         _willEnter: function _willEnter() {
-            var _this5 = this;
+            var _this6 = this;
 
             // willEnter spider.index controller
             this.get('extractedItems').setObjects([]);
@@ -7271,10 +7313,10 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             });
             this.get('browseHistory').clear();
             Ember['default'].run.next(function () {
-                if (_this5.get('url')) {
-                    _this5.loadUrl(_this5.get('url'), _this5.get('baseurl'));
-                    _this5.set('url', null);
-                    _this5.set('baseurl', null);
+                if (_this6.get('url')) {
+                    _this6.loadUrl(_this6.get('url'), _this6.get('baseurl'));
+                    _this6.set('url', null);
+                    _this6.set('baseurl', null);
                 }
             });
         },
@@ -20766,6 +20808,14 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               var el2 = dom.createTextNode("                ");
               dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"id","dvTable");
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
               var el1 = dom.createTextNode("\n");
               dom.appendChild(el0, el1);
               return el0;
@@ -32215,6 +32265,29 @@ define('portia-web/utils/slyd-api', ['exports', 'ember', 'ic-ajax', 'portia-web/
             hash.url = this.get('scrapelyUrl') + 'train';
             return this.makeAjaxCall(hash)['catch'](function (err) {
                 err.title = 'Failed to train scrapely';
+                throw err;
+            });
+        },
+
+        /**
+        @public
+         Detect cookies using current url.
+         @method getCookies
+        @for this
+        @param {String} [currentUrl] the currentUrl of the page.
+        @return {Promise} a promise that fulfills with an {Object} containing
+            the cookies set by the website when requesting that url.
+        */
+        getCookies: function getCookies(currentUrl) {
+            var hash = {};
+            hash.type = 'POST';
+            var data = { current_url: currentUrl || this.get('currentUrl') };
+            hash.data = data;
+            hash.url = this.get('botUrl') + 'getCookies';
+            return this.makeAjaxCall(hash).then((function (cookies) {
+                return cookies;
+            }).bind(this), function (err) {
+                err.title = 'Failed to get cookies';
                 throw err;
             });
         },
