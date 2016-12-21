@@ -59,6 +59,7 @@ export default BaseController.extend({
     arabicUrlArgsAction: 'addArabicUrlArgs',
 
     toggleCookiesAction: 'toggleCookies',
+    toggleCurrencyCookiesAction: 'toggleCurrencyCookies',
 
     enCookieName: function(){
         return this.get('model.english_cookie_name');
@@ -80,6 +81,17 @@ export default BaseController.extend({
     enCookieValueAction: 'addEnCookieValue',
     arCookieNameAction: 'addArCookieName',
     arCookieValueAction: 'addArCookieValue',
+
+    currencyCookieName: function(){
+        return this.get('model.currency_cookie_name');
+    }.property('model.currency_cookie_name'),
+
+    currencyCookieValue: function(){
+        return this.get('model.currency_cookie_value');
+    }.property('model.currency_cookie_value'),
+
+    currencyCookieNameAction: 'addCurrencyCookieName',
+    currencyCookieValueAction: 'addCurrencyCookieValue',
 
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
@@ -199,24 +211,23 @@ export default BaseController.extend({
     }.property('model.init_requests'),
 
     getCookies: function() {
-        if(this.get('model.cookies_enabled')) {
+        if(this.get('model.cookies_enabled') || this.get('model.use_currency_cookies')) {
             var currentUrl = this.get('currentUrl');
             this.get('documentView').hideLoading();
             this.set('testing', false);
-            this.showSuccessNotification("Training scrapely started",
-                              "The training process of scrapely is started successfully");
+            this.showSuccessNotification("Detecting cookies started",
+                              "Detecting cookies process started successfully");
             this.get('slyd').getCookies(currentUrl).then((cookies)=>{
             this.generateTable(cookies);
             },
-            () => { this.showSuccessNotification("Training scrapely finished",
-                "The training process of scrapely is finished successfully");}).catch(function(err){
+            () => { this.showSuccessNotification("Detecting cookies finished",
+                "Detecting cookies process finished successfully");}).catch(function(err){
                 throw err;
             });
         }
     },
 
     generateTable: function(cookies) {
-        console.log(cookies);
         var table = document.createElement("TABLE");
         table.border = "1";
         for (var key in cookies) {
@@ -233,9 +244,12 @@ export default BaseController.extend({
                 }
             }
         }
-        var dvTable = document.getElementById("dvTable");
-        dvTable.innerHTML = "";
-        dvTable.appendChild(table);
+        var dvTables = document.getElementsByClassName("dvTable");
+        var i;
+        for (i= 0; i < dvTables.length; i++) {
+            dvTables[i].innerHTML = "";
+            dvTables[i].appendChild(table.cloneNode(true));
+        }
     },
 
     spiderDomains: function() {
@@ -416,6 +430,14 @@ export default BaseController.extend({
         }
     },
 
+    toggleCurrencyCookies: function(){
+        if(this.get('model.use_currency_cookies')){
+            this.set('model.use_currency_cookies', false);
+        }else{
+            this.set('model.use_currency_cookies', true);
+        }
+    },
+
     addEnCookieName: function(name){
         if(name){
             this.set('model.english_cookie_name', name);
@@ -446,6 +468,14 @@ export default BaseController.extend({
         }else{
             this.set('model.arabic_cookie_value', value);
         }
+    },
+
+    addCurrencyCookieName: function(name){
+        this.set('model.currency_cookie_name', name);
+    },
+
+    addCurrencyCookieValue: function(value){
+        this.set('model.currency_cookie_value', value);
     },
 
     addExcludePattern: function(pattern, index) {
@@ -637,6 +667,10 @@ export default BaseController.extend({
             this.toggleCookies();
         },
 
+        toggleCurrencyCookies: function(){
+            this.toggleCurrencyCookies();
+        },
+
         addEnCookieName: function(name){
             this.addEnCookieName(name);
         },
@@ -651,6 +685,14 @@ export default BaseController.extend({
 
         addArCookieValue: function(value){
             this.addArCookieValue(value);
+        },
+
+        addCurrencyCookieName: function(name){
+            this.addCurrencyCookieName(name);
+        },
+
+        addCurrencyCookieValue: function(value){
+            this.addCurrencyCookieValue(value);
         },
 
         detectCookies: function(){

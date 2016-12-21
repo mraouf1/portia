@@ -6539,6 +6539,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         arabicUrlArgsAction: 'addArabicUrlArgs',
 
         toggleCookiesAction: 'toggleCookies',
+        toggleCurrencyCookiesAction: 'toggleCurrencyCookies',
 
         enCookieName: (function () {
             return this.get('model.english_cookie_name');
@@ -6560,6 +6561,17 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         enCookieValueAction: 'addEnCookieValue',
         arCookieNameAction: 'addArCookieName',
         arCookieValueAction: 'addArCookieValue',
+
+        currencyCookieName: (function () {
+            return this.get('model.currency_cookie_name');
+        }).property('model.currency_cookie_name'),
+
+        currencyCookieValue: (function () {
+            return this.get('model.currency_cookie_value');
+        }).property('model.currency_cookie_value'),
+
+        currencyCookieNameAction: 'addCurrencyCookieName',
+        currencyCookieValueAction: 'addCurrencyCookieValue',
 
         followPatternOptions: [{ value: 'all', label: 'Follow all in-domain links' }, { value: 'none', label: "Don't follow links" }, { value: 'patterns', label: 'Configure follow and exclude patterns' }],
 
@@ -6672,15 +6684,15 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         getCookies: function getCookies() {
             var _this = this;
 
-            if (this.get('model.cookies_enabled')) {
+            if (this.get('model.cookies_enabled') || this.get('model.use_currency_cookies')) {
                 var currentUrl = this.get('currentUrl');
                 this.get('documentView').hideLoading();
                 this.set('testing', false);
-                this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
+                this.showSuccessNotification("Detecting cookies started", "Detecting cookies process started successfully");
                 this.get('slyd').getCookies(currentUrl).then(function (cookies) {
                     _this.generateTable(cookies);
                 }, function () {
-                    _this.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+                    _this.showSuccessNotification("Detecting cookies finished", "Detecting cookies process finished successfully");
                 })['catch'](function (err) {
                     throw err;
                 });
@@ -6688,7 +6700,6 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         generateTable: function generateTable(cookies) {
-            console.log(cookies);
             var table = document.createElement("TABLE");
             table.border = "1";
             for (var key in cookies) {
@@ -6705,9 +6716,12 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
                     }
                 }
             }
-            var dvTable = document.getElementById("dvTable");
-            dvTable.innerHTML = "";
-            dvTable.appendChild(table);
+            var dvTables = document.getElementsByClassName("dvTable");
+            var i;
+            for (i = 0; i < dvTables.length; i++) {
+                dvTables[i].innerHTML = "";
+                dvTables[i].appendChild(table.cloneNode(true));
+            }
         },
 
         spiderDomains: (function () {
@@ -6878,6 +6892,14 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             }
         },
 
+        toggleCurrencyCookies: function toggleCurrencyCookies() {
+            if (this.get('model.use_currency_cookies')) {
+                this.set('model.use_currency_cookies', false);
+            } else {
+                this.set('model.use_currency_cookies', true);
+            }
+        },
+
         addEnCookieName: function addEnCookieName(name) {
             if (name) {
                 this.set('model.english_cookie_name', name);
@@ -6908,6 +6930,14 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             } else {
                 this.set('model.arabic_cookie_value', value);
             }
+        },
+
+        addCurrencyCookieName: function addCurrencyCookieName(name) {
+            this.set('model.currency_cookie_name', name);
+        },
+
+        addCurrencyCookieValue: function addCurrencyCookieValue(value) {
+            this.set('model.currency_cookie_value', value);
         },
 
         addExcludePattern: function addExcludePattern(pattern, index) {
@@ -7106,6 +7136,10 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
                 this.toggleCookies();
             },
 
+            toggleCurrencyCookies: function toggleCurrencyCookies() {
+                this.toggleCurrencyCookies();
+            },
+
             addEnCookieName: function addEnCookieName(name) {
                 this.addEnCookieName(name);
             },
@@ -7120,6 +7154,14 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
 
             addArCookieValue: function addArCookieValue(value) {
                 this.addArCookieValue(value);
+            },
+
+            addCurrencyCookieName: function addCurrencyCookieName(name) {
+                this.addCurrencyCookieName(name);
+            },
+
+            addCurrencyCookieValue: function addCurrencyCookieValue(value) {
+                this.addCurrencyCookieValue(value);
             },
 
             detectCookies: function detectCookies() {
@@ -9666,7 +9708,7 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
     var ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns", "js_enable_patterns", "js_disable_patterns", "allowed_domains", "templates", "template_names", "page_actions"];
 
     exports['default'] = SimpleModel['default'].extend({
-        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code', 'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args', 'cookies_enabled', 'english_cookie_name', 'english_cookie_value', 'arabic_cookie_name', 'arabic_cookie_value', 'use_cookies'],
+        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code', 'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args', 'cookies_enabled', 'english_cookie_name', 'english_cookie_value', 'arabic_cookie_name', 'arabic_cookie_value', 'use_currency_cookies', 'currency_cookie_name', 'currency_cookie_value'],
         serializedRelations: ['templates'],
         start_urls: null,
         country_code: null,
@@ -9688,7 +9730,9 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
         english_cookie_value: null,
         arabic_cookie_name: null,
         arabic_cookie_value: null,
-        use_cookies: false,
+        use_currency_cookies: false,
+        currency_cookie_name: null,
+        currency_cookie_value: null,
 
         init: function init() {
             var _this = this;
@@ -20400,11 +20444,11 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element15 = dom.childAt(fragment, [1]);
-              var element16 = dom.childAt(element15, [3]);
-              var morph0 = dom.createMorphAt(dom.childAt(element15, [1]),1,1);
-              var morph1 = dom.createMorphAt(element16,1,1);
-              var morph2 = dom.createMorphAt(element16,3,3);
+              var element16 = dom.childAt(fragment, [1]);
+              var element17 = dom.childAt(element16, [3]);
+              var morph0 = dom.createMorphAt(dom.childAt(element16, [1]),1,1);
+              var morph1 = dom.createMorphAt(element17,1,1);
+              var morph2 = dom.createMorphAt(element17,3,3);
               block(env, morph0, context, "bs-button", [], {"clicked": "loadUrl", "clickedParam": get(env, context, "url"), "type": "light", "title": get(env, context, "url"), "popoverPlacement": "left"}, child0, null);
               inline(env, morph1, context, "copy-clipboard", [], {"text": get(env, context, "url")});
               inline(env, morph2, context, "bs-button", [], {"clicked": "deleteStartUrl", "clickedParam": get(env, context, "url"), "icon": "fa fa-icon fa-trash", "type": "danger", "size": "xs"});
@@ -20521,11 +20565,11 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element14 = dom.childAt(fragment, [1]);
-              var morph0 = dom.createMorphAt(element14,3,3);
-              var morph1 = dom.createMorphAt(element14,7,7);
-              var morph2 = dom.createMorphAt(element14,11,11);
-              element(env, element14, context, "bind-attr", [], {"style": "ex_tiny_box_style"});
+              var element15 = dom.childAt(fragment, [1]);
+              var morph0 = dom.createMorphAt(element15,3,3);
+              var morph1 = dom.createMorphAt(element15,7,7);
+              var morph2 = dom.createMorphAt(element15,11,11);
+              element(env, element15, context, "bind-attr", [], {"style": "ex_tiny_box_style"});
               inline(env, morph0, context, "text-field", [], {"value": get(env, context, "loginUrl"), "name": "loginUrl", "width": "94%", "placeholder": "Login URL", "action": "updateLoginInfo", "update": "addInitRequest"});
               inline(env, morph1, context, "text-field", [], {"value": get(env, context, "loginUser"), "name": "loginUser", "width": "94%", "placeholder": "Login user", "action": "updateLoginInfo", "update": "addInitRequest"});
               inline(env, morph2, context, "text-field", [], {"value": get(env, context, "loginPassword"), "name": "loginPassword", "width": "94%", "placeholder": "Login password", "action": "updateLoginInfo", "update": "addInitRequest"});
@@ -20613,25 +20657,6 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             var el1 = dom.createTextNode("\n\n        ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
-            dom.setAttribute(el1,"style","margin-top:5px");
-            dom.setAttribute(el1,"class","scrolling-container");
-            var el2 = dom.createTextNode("\n            ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createElement("span");
-            dom.setAttribute(el2,"class","important-label");
-            var el3 = dom.createTextNode("Select currency code ");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n            ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createComment("");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n        ");
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n\n        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("div");
             dom.setAttribute(el1,"style","margin-top:20px");
             dom.setAttribute(el1,"class","scrolling-container");
             var el2 = dom.createTextNode("\n            ");
@@ -20680,28 +20705,26 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             } else {
               fragment = this.build(dom);
             }
-            var element17 = dom.childAt(fragment, [1, 3]);
-            var element18 = dom.childAt(fragment, [3]);
-            var element19 = dom.childAt(fragment, [11]);
-            var morph0 = dom.createMorphAt(element17,1,1);
-            var morph1 = dom.createMorphAt(element17,3,3);
-            var morph2 = dom.createMorphAt(element18,1,1);
+            var element18 = dom.childAt(fragment, [1, 3]);
+            var element19 = dom.childAt(fragment, [3]);
+            var element20 = dom.childAt(fragment, [9]);
+            var morph0 = dom.createMorphAt(element18,1,1);
+            var morph1 = dom.createMorphAt(element18,3,3);
+            var morph2 = dom.createMorphAt(element19,1,1);
             var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
             var morph4 = dom.createMorphAt(dom.childAt(fragment, [7]),3,3);
-            var morph5 = dom.createMorphAt(dom.childAt(fragment, [9]),3,3);
-            var morph6 = dom.createMorphAt(element19,3,3);
-            var morph7 = dom.createMorphAt(element19,5,5);
-            var morph8 = dom.createMorphAt(fragment,13,13,contextualElement);
+            var morph5 = dom.createMorphAt(element20,3,3);
+            var morph6 = dom.createMorphAt(element20,5,5);
+            var morph7 = dom.createMorphAt(fragment,11,11,contextualElement);
             inline(env, morph0, context, "bs-badge", [], {"class": "pull-right btn-primary", "content": get(env, context, "startUrlCount")});
             block(env, morph1, context, "bs-button", [], {"type": get(env, context, "editAllStartUrlsType"), "clicked": get(env, context, "editAllStartUrlsAction"), "size": "xs", "disabled": get(env, context, "hasStartUrls"), "class": "pull-right"}, child0, null);
-            element(env, element18, context, "bind-attr", [], {"style": "tiny_box_style"});
+            element(env, element19, context, "bind-attr", [], {"style": "tiny_box_style"});
             block(env, morph2, context, "each", [get(env, context, "model.start_urls")], {"keyword": "url"}, child1, child2);
             inline(env, morph3, context, "text-area-with-button", [], {"placeholder": "Enter one or multiple start page urls here", "action": get(env, context, "startUrlsAction"), "reset": true, "value": get(env, context, "startUrls")});
             inline(env, morph4, context, "item-select", [], {"options": get(env, context, "countryCodes"), "value": get(env, context, "countryCode"), "changed": "addCountryCode", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
-            inline(env, morph5, context, "item-select", [], {"options": get(env, context, "currencyCodes"), "value": get(env, context, "currencyCode"), "changed": "addCurrencyCode", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
-            inline(env, morph6, context, "check-box", [], {"checked": get(env, context, "model.performLogin"), "name": "performLoginCheck"});
-            inline(env, morph7, context, "inline-help", [], {"message": "perform_login"});
-            block(env, morph8, context, "if", [get(env, context, "model.performLogin")], {}, child3, null);
+            inline(env, morph5, context, "check-box", [], {"checked": get(env, context, "model.performLogin"), "name": "performLoginCheck"});
+            inline(env, morph6, context, "inline-help", [], {"message": "perform_login"});
+            block(env, morph7, context, "if", [get(env, context, "model.performLogin")], {}, child3, null);
             return fragment;
           }
         };
@@ -20717,7 +20740,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               hasRendered: false,
               build: function build(dom) {
                 var el0 = dom.createDocumentFragment();
-                var el1 = dom.createTextNode("                        Detect Cookies\n");
+                var el1 = dom.createTextNode("                    Detect Cookies\n");
                 dom.appendChild(el0, el1);
                 return el0;
               },
@@ -20752,51 +20775,51 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             hasRendered: false,
             build: function build(dom) {
               var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("                ");
+              var el1 = dom.createTextNode("            ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("div");
               dom.setAttribute(el1,"style","margin-top:20px");
               dom.setAttribute(el1,"class","scrolling-container");
-              var el2 = dom.createTextNode("\n                    ");
+              var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
               var el2 = dom.createElement("h4");
               var el3 = dom.createTextNode("English cookie configuration ");
               dom.appendChild(el2, el3);
               dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n                    ");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createComment("");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n                    ");
+              var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
               var el2 = dom.createComment("");
               dom.appendChild(el1, el2);
               var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n            ");
+              dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n\n                 ");
+              var el1 = dom.createTextNode("\n\n            ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("div");
               dom.setAttribute(el1,"style","margin-top:20px");
               dom.setAttribute(el1,"class","scrolling-container");
-              var el2 = dom.createTextNode("\n                     ");
+              var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
               var el2 = dom.createElement("h4");
               var el3 = dom.createTextNode("Arabic cookie configuration ");
               dom.appendChild(el2, el3);
               dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n                    ");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createComment("");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n                    ");
+              var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
               var el2 = dom.createComment("");
               dom.appendChild(el1, el2);
               var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n            ");
+              dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n\n                ");
+              var el1 = dom.createTextNode("\n\n            ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("div");
               dom.setAttribute(el1,"style","margin-top:20px");
@@ -20805,15 +20828,15 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               dom.appendChild(el1, el2);
               var el2 = dom.createComment("");
               dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("                ");
+              var el2 = dom.createTextNode("            ");
               dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n                ");
+              var el1 = dom.createTextNode("\n            ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("div");
               dom.setAttribute(el1,"style","margin-top:20px");
-              dom.setAttribute(el1,"id","dvTable");
-              var el2 = dom.createTextNode("\n                ");
+              dom.setAttribute(el1,"class","dvTable");
+              var el2 = dom.createTextNode("\n            ");
               dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
               var el1 = dom.createTextNode("\n");
@@ -20840,12 +20863,12 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element10 = dom.childAt(fragment, [1]);
-              var element11 = dom.childAt(fragment, [3]);
-              var morph0 = dom.createMorphAt(element10,3,3);
-              var morph1 = dom.createMorphAt(element10,5,5);
-              var morph2 = dom.createMorphAt(element11,3,3);
-              var morph3 = dom.createMorphAt(element11,5,5);
+              var element11 = dom.childAt(fragment, [1]);
+              var element12 = dom.childAt(fragment, [3]);
+              var morph0 = dom.createMorphAt(element11,3,3);
+              var morph1 = dom.createMorphAt(element11,5,5);
+              var morph2 = dom.createMorphAt(element12,3,3);
+              var morph3 = dom.createMorphAt(element12,5,5);
               var morph4 = dom.createMorphAt(dom.childAt(fragment, [5]),1,1);
               inline(env, morph0, context, "text-field", [], {"placeholder": "Enter cookie name", "action": get(env, context, "enCookieNameAction"), "update": get(env, context, "enCookieNameAction"), "reset": true, "value": get(env, context, "enCookieName"), "width": "40%"});
               inline(env, morph1, context, "text-field", [], {"placeholder": "Enter cookie value", "action": get(env, context, "enCookieValueAction"), "update": get(env, context, "enCookieValueAction"), "reset": true, "value": get(env, context, "enCookieValue"), "width": "40%"});
@@ -20864,67 +20887,67 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           hasRendered: false,
           build: function build(dom) {
             var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("            ");
+            var el1 = dom.createTextNode("        ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
             dom.setAttribute(el1,"style","margin-top:10px");
             dom.setAttribute(el1,"class","scrolling-container");
-            var el2 = dom.createTextNode("\n                ");
+            var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
             var el2 = dom.createElement("h4");
             var el3 = dom.createTextNode("English URL configuration ");
             dom.appendChild(el2, el3);
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n                ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createComment("");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n                ");
+            var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
             var el2 = dom.createComment("");
             dom.appendChild(el1, el2);
             var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n        ");
+            dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n            ");
+            var el1 = dom.createTextNode("\n        ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
             dom.setAttribute(el1,"style","margin-top:20px");
             dom.setAttribute(el1,"class","scrolling-container");
-            var el2 = dom.createTextNode("\n                ");
+            var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
             var el2 = dom.createElement("h4");
             var el3 = dom.createTextNode("Arabic URL configuration ");
             dom.appendChild(el2, el3);
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n                ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createComment("");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n                ");
+            var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
             var el2 = dom.createComment("");
             dom.appendChild(el1, el2);
             var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n        ");
+            dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n\n            ");
+            var el1 = dom.createTextNode("\n\n        ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
             dom.setAttribute(el1,"style","margin-top:20px");
             dom.setAttribute(el1,"class","scrolling-container");
-            var el2 = dom.createTextNode("\n                ");
+            var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
             var el2 = dom.createElement("span");
             dom.setAttribute(el2,"class","important-label");
             var el3 = dom.createTextNode("Use Cookies");
             dom.appendChild(el2, el3);
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n                ");
+            var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
             var el2 = dom.createComment("");
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n            ");
+            var el2 = dom.createTextNode("\n        ");
             dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
             var el1 = dom.createTextNode("\n\n");
@@ -20955,12 +20978,12 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             } else {
               fragment = this.build(dom);
             }
-            var element12 = dom.childAt(fragment, [1]);
-            var element13 = dom.childAt(fragment, [3]);
-            var morph0 = dom.createMorphAt(element12,3,3);
-            var morph1 = dom.createMorphAt(element12,5,5);
-            var morph2 = dom.createMorphAt(element13,3,3);
-            var morph3 = dom.createMorphAt(element13,5,5);
+            var element13 = dom.childAt(fragment, [1]);
+            var element14 = dom.childAt(fragment, [3]);
+            var morph0 = dom.createMorphAt(element13,3,3);
+            var morph1 = dom.createMorphAt(element13,5,5);
+            var morph2 = dom.createMorphAt(element14,3,3);
+            var morph3 = dom.createMorphAt(element14,5,5);
             var morph4 = dom.createMorphAt(dom.childAt(fragment, [5]),3,3);
             var morph5 = dom.createMorphAt(fragment,7,7,contextualElement);
             inline(env, morph0, context, "text-field", [], {"placeholder": "Enter merchant English url", "action": get(env, context, "englishUrlAction"), "update": get(env, context, "englishUrlAction"), "reset": true, "value": get(env, context, "englishUrl"), "width": "94%"});
@@ -20974,6 +20997,213 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
         };
       }());
       var child2 = (function() {
+        var child0 = (function() {
+          var child0 = (function() {
+            return {
+              isHTMLBars: true,
+              revision: "Ember@1.11.4",
+              blockParams: 0,
+              cachedFragment: null,
+              hasRendered: false,
+              build: function build(dom) {
+                var el0 = dom.createDocumentFragment();
+                var el1 = dom.createTextNode("                    Detect Cookies\n");
+                dom.appendChild(el0, el1);
+                return el0;
+              },
+              render: function render(context, env, contextualElement) {
+                var dom = env.dom;
+                dom.detectNamespace(contextualElement);
+                var fragment;
+                if (env.useFragmentCache && dom.canClone) {
+                  if (this.cachedFragment === null) {
+                    fragment = this.build(dom);
+                    if (this.hasRendered) {
+                      this.cachedFragment = fragment;
+                    } else {
+                      this.hasRendered = true;
+                    }
+                  }
+                  if (this.cachedFragment) {
+                    fragment = dom.cloneNode(this.cachedFragment, true);
+                  }
+                } else {
+                  fragment = this.build(dom);
+                }
+                return fragment;
+              }
+            };
+          }());
+          return {
+            isHTMLBars: true,
+            revision: "Ember@1.11.4",
+            blockParams: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            build: function build(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("            ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"class","scrolling-container");
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("h4");
+              var el3 = dom.createTextNode("Currency cookie configuration ");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n            ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n\n            ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"class","btn-center");
+              var el2 = dom.createTextNode("\n");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("            ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n            ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"class","dvTable");
+              var el2 = dom.createTextNode("\n            ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            render: function render(context, env, contextualElement) {
+              var dom = env.dom;
+              var hooks = env.hooks, get = hooks.get, inline = hooks.inline, block = hooks.block;
+              dom.detectNamespace(contextualElement);
+              var fragment;
+              if (env.useFragmentCache && dom.canClone) {
+                if (this.cachedFragment === null) {
+                  fragment = this.build(dom);
+                  if (this.hasRendered) {
+                    this.cachedFragment = fragment;
+                  } else {
+                    this.hasRendered = true;
+                  }
+                }
+                if (this.cachedFragment) {
+                  fragment = dom.cloneNode(this.cachedFragment, true);
+                }
+              } else {
+                fragment = this.build(dom);
+              }
+              var element10 = dom.childAt(fragment, [1]);
+              var morph0 = dom.createMorphAt(element10,3,3);
+              var morph1 = dom.createMorphAt(element10,5,5);
+              var morph2 = dom.createMorphAt(dom.childAt(fragment, [3]),1,1);
+              inline(env, morph0, context, "text-field", [], {"placeholder": "Enter cookie name", "action": get(env, context, "currencyCookieNameAction"), "update": get(env, context, "currencyCookieNameAction"), "reset": true, "value": get(env, context, "currencyCookieName"), "width": "40%"});
+              inline(env, morph1, context, "text-field", [], {"placeholder": "Enter cookie value", "action": get(env, context, "currencyCookieValueAction"), "update": get(env, context, "currencyCookieValueAction"), "reset": true, "value": get(env, context, "currencyCookieValue"), "width": "40%"});
+              block(env, morph2, context, "bs-button", [], {"clicked": "detectCookies", "clickedParam": get(env, context, "this"), "type": "primary", "title": "Detect Cookies"}, child0, null);
+              return fragment;
+            }
+          };
+        }());
+        return {
+          isHTMLBars: true,
+          revision: "Ember@1.11.4",
+          blockParams: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          build: function build(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("\n        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:5px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("span");
+            dom.setAttribute(el2,"class","important-label");
+            var el3 = dom.createTextNode("Select currency code ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n        ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n\n        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:20px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("span");
+            dom.setAttribute(el2,"class","important-label");
+            var el3 = dom.createTextNode("Use Cookies");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n        ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n\n");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          render: function render(context, env, contextualElement) {
+            var dom = env.dom;
+            var hooks = env.hooks, get = hooks.get, inline = hooks.inline, block = hooks.block;
+            dom.detectNamespace(contextualElement);
+            var fragment;
+            if (env.useFragmentCache && dom.canClone) {
+              if (this.cachedFragment === null) {
+                fragment = this.build(dom);
+                if (this.hasRendered) {
+                  this.cachedFragment = fragment;
+                } else {
+                  this.hasRendered = true;
+                }
+              }
+              if (this.cachedFragment) {
+                fragment = dom.cloneNode(this.cachedFragment, true);
+              }
+            } else {
+              fragment = this.build(dom);
+            }
+            var morph0 = dom.createMorphAt(dom.childAt(fragment, [1]),3,3);
+            var morph1 = dom.createMorphAt(dom.childAt(fragment, [3]),3,3);
+            var morph2 = dom.createMorphAt(fragment,5,5,contextualElement);
+            inline(env, morph0, context, "item-select", [], {"options": get(env, context, "currencyCodes"), "value": get(env, context, "currencyCode"), "changed": "addCurrencyCode", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
+            inline(env, morph1, context, "check-box", [], {"checked": get(env, context, "model.use_currency_cookies"), "action": get(env, context, "toggleCurrencyCookiesAction")});
+            block(env, morph2, context, "if", [get(env, context, "model.use_currency_cookies")], {}, child0, null);
+            return fragment;
+          }
+        };
+      }());
+      var child3 = (function() {
         var child0 = (function() {
           return {
             isHTMLBars: true,
@@ -21822,7 +22052,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           }
         };
       }());
-      var child3 = (function() {
+      var child4 = (function() {
         var child0 = (function() {
           var child0 = (function() {
             return {
@@ -22037,7 +22267,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           }
         };
       }());
-      var child4 = (function() {
+      var child5 = (function() {
         var child0 = (function() {
           var child0 = (function() {
             var child0 = (function() {
@@ -22314,6 +22544,10 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           dom.appendChild(el0, el1);
           var el1 = dom.createComment("");
           dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
           return el0;
         },
         render: function render(context, env, contextualElement) {
@@ -22341,13 +22575,15 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           var morph2 = dom.createMorphAt(fragment,3,3,contextualElement);
           var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
           var morph4 = dom.createMorphAt(fragment,7,7,contextualElement);
+          var morph5 = dom.createMorphAt(fragment,9,9,contextualElement);
           dom.insertBoundary(fragment, null);
           dom.insertBoundary(fragment, 0);
           block(env, morph0, context, "accordion-item", [], {"title": "Initialization"}, child0, null);
           block(env, morph1, context, "accordion-item", [], {"title": "Language"}, child1, null);
-          block(env, morph2, context, "accordion-item", [], {"title": "Crawling"}, child2, null);
-          block(env, morph3, context, "accordion-item", [], {"title": "Samples"}, child3, null);
-          block(env, morph4, context, "if", [get(env, context, "pageActionsEnabled")], {}, child4, null);
+          block(env, morph2, context, "accordion-item", [], {"title": "Currency"}, child2, null);
+          block(env, morph3, context, "accordion-item", [], {"title": "Crawling"}, child3, null);
+          block(env, morph4, context, "accordion-item", [], {"title": "Samples"}, child4, null);
+          block(env, morph5, context, "if", [get(env, context, "pageActionsEnabled")], {}, child5, null);
           return fragment;
         }
       };
