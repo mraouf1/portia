@@ -15,46 +15,19 @@ CURRENCY_CODE = "{currency_code}"
 USE_SCRAPELY = True
 START_URLS = {start_urls}
 ALLOWED_DOMAINS = {allowed_domains}
-MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': None}}]
+MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': {general_cookie} }}]
 RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
                                 deny={deny_regex}),
               callback='parse_item', follow=True)]
 localization_config = {{
     'english': {{
         'url': "{english_url}",
-        'cookie_config': None,
+        'cookie_config': [{english_language_cookie}],
         'url_args': "{english_url_args}"
     }},
     'arabic': {{
         'url': "{arabic_url}",
-        'cookie_config': None,
-        'url_args': "{arabic_url_args}"
-    }}
-}}
-"""
-
-MERCHANT_SETTING_BASE_COOKIES_ENABLED = """
-# Automatically created by: slyd
-# -*- coding: utf-8 -*-
-LOG_FILE = '/var/kipp/logs/{merchant_name}.log'
-COUNTRY_CODE = "{country_code}"
-CURRENCY_CODE = "{currency_code}"
-USE_SCRAPELY = True
-START_URLS = {start_urls}
-ALLOWED_DOMAINS = {allowed_domains}
-MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': {{'name':"{english_cookie_name}", 'value': "{english_cookie_value}", 'domain': ".{allowed_domains[0]}", 'path': '/'}} }}]
-RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
-                                deny={deny_regex}),
-              callback='parse_item', follow=True)]
-localization_config = {{
-    'english': {{
-        'url': "{english_url}",
-        'cookie_config': [{{'name':"{english_cookie_name}", 'value': "{english_cookie_value}", 'domain': ".{allowed_domains[0]}", 'path': '/'}}],
-        'url_args': "{english_url_args}"
-    }},
-    'arabic': {{
-        'url': "{arabic_url}",
-        'cookie_config': [{{'name':"{arabic_cookie_name}", 'value': "{arabic_cookie_value}", 'domain': '.{allowed_domains[0]}', 'path': '/'}}],
+        'cookie_config': [{arabic_language_cookie}],
         'url_args': "{arabic_url_args}"
     }}
 }}
@@ -194,14 +167,19 @@ class Train(ScrapelyResource):
         english_cookie_value = spider_spec['english_cookie_value']
         arabic_cookie_name = spider_spec['english_url_args']
         arabic_cookie_value = spider_spec['arabic_cookie_value']
-        cookies_enabled = spider_spec['cookies_enabled']
+        use_language_cookies = spider_spec['cookies_enabled']
+        use_currency_cookies = spider_spec['use_currency_cookies']
+        currency_cookie_name = spider_spec['currency_cookie_name']
+        currency_cookie_value = spider_spec['currency_cookie_value']
         self._create_setting_file(merchant_file_path, merchant_name=merchant_name, country_code=country_code,
                                   start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
                                   allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code,
                                   english_url=english_url, arabic_url=arabic_url, english_url_args=english_url_args,
                                   arabic_url_args= arabic_url_args, english_cookie_name=english_cookie_name,
                                   english_cookie_value=english_cookie_value, arabic_cookie_name=arabic_cookie_name,
-                                  arabic_cookie_value=arabic_cookie_value, cookies_enabled=cookies_enabled)
+                                  arabic_cookie_value=arabic_cookie_value, use_language_cookies=use_language_cookies,
+                                  use_currency_cookies=use_currency_cookies, currency_cookie_name=currency_cookie_name,
+                                  currency_cookie_value=currency_cookie_value)
 
     def _create_setting_file(self, file_path, **kwargs):
         """
@@ -210,9 +188,47 @@ class Train(ScrapelyResource):
         :param args:
         :return:
         """
-        if kwargs['cookies_enabled']:
-            merchant_setting = MERCHANT_SETTING_BASE_COOKIES_ENABLED.format(**kwargs)
+        if kwargs['use_language_cookies']:
+            english_language_cookie = """
+                {{'name':"{english_cookie_name}", 'value': "{english_cookie_value}",
+                'domain': ".{allowed_domains[0]}", 'path': '/'}}
+                """.format(**kwargs)
+            arabic_language_cookie = """
+                {{'name': "{arabic_cookie_name}", 'value': "{arabic_cookie_value}",
+                'domain': '.{allowed_domains[0]}', 'path': '/'}}
+                """.format(**kwargs)
         else:
-            merchant_setting = MERCHANT_SETTING_BASE.format(**kwargs)
+            english_language_cookie = None
+            arabic_language_cookie = None
+        if kwargs['use_currency_cookies']:
+            currency_cookie = """
+                {{'name':"{currency_cookie_name}", 'value': "{currency_cookie_value}",
+                'domain': ".{allowed_domains[0]}", 'path': '/'}}
+                """.format(**kwargs)
+        else:
+            currency_cookie = None
+
+        kwargs.setdefault('english_language_cookie', english_language_cookie)
+        kwargs.setdefault('arabic_language_cookie', arabic_language_cookie)
+        kwargs.setdefault('currency_cookie', currency_cookie)
+
+        if kwargs['use_language_cookies'] and kwargs['use_currency_cookies']:
+            general_cookie = """
+                [{english_language_cookie}, {currency_cookie}]
+                """.format(**kwargs)
+        elif kwargs['use_language_cookies']:
+            general_cookie = """
+                [{english_language_cookie}]
+                """.format(**kwargs)
+        elif kwargs['use_currency_cookies']:
+            general_cookie = """
+                [{currency_cookie}]
+                """.format(**kwargs)
+        else:
+            general_cookie = None
+
+        kwargs.setdefault('general_cookie', general_cookie)
+        merchant_setting = MERCHANT_SETTING_BASE.format(**kwargs)
+
         with open(file_path, 'w') as f:
             f.write(merchant_setting)
