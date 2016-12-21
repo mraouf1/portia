@@ -28,7 +28,7 @@ export default SimpleModel.extend({
 
     idBinding: null,
 
-    serializedProperties: ['id', 'variant', 'annotations', 'required', 'generated'],
+    serializedProperties: ['id', 'variant', 'annotations', 'required', 'generated', 'is_required', 'weight'],
 
     name: function() {
         var annotations = this.get('annotations');
@@ -49,6 +49,10 @@ export default SimpleModel.extend({
     annotations: null,
 
     required: null,
+
+    is_required: false,
+
+    weight: 1.0,
 
     generated: false,
 

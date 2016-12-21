@@ -138,6 +138,10 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 }
             },
 
+            updateWeight: function updateWeight(value, index) {
+                this.setAttr(index, value, 'weight');
+            },
+
             updateAttribute: function updateAttribute(value, index) {
                 this.setAttr(index, value, 'attribute');
             },
@@ -303,6 +307,8 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 data = {
                 annotations: {},
                 required: [],
+                is_required: false,
+                weight: 1.0,
                 variant: 0,
                 id: utils['default'].shortGuid(),
                 tagid: element.data('tagid')
@@ -341,8 +347,10 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
             if ((required || required === false) && annotation['required'] !== required) {
                 try {
                     annotation.set('required', required);
+                    annotation.set('is_required', required);
                 } catch (e) {
                     annotation['required'] = required;
+                    annotation['is_required'] = required;
                 }
                 update = true;
             }
@@ -375,7 +383,9 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
         updateAnnotations: function updateAnnotations() {
             var annotations = {},
                 required = [],
-                idMap = this.get('fieldNameIdMap');
+                idMap = this.get('fieldNameIdMap'),
+                is_required = false,
+                weight = 1;
             this.get('mappings').forEach(function (annotation) {
                 var attribute = annotation['attribute'],
                     field = annotation['field'];
@@ -390,9 +400,13 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 if (annotation['required']) {
                     required.push(field);
                 }
+                is_required = annotation.is_required;
+                weight = annotation.weight;
             });
             this.set('data.annotations', annotations);
             this.set('data.required', required);
+            this.set('data.is_required', is_required);
+            this.set('data.weight', parseFloat(weight));
             if (this.get('mappedElement').attr('content')) {
                 this.set('data.text-content', 'text content');
             }
@@ -440,6 +454,21 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
             options.pushObject({ value: '#create', label: '-create new-' });
             return options;
         }).property('item.fields.@each'),
+
+        weightFields: (function () {
+            var options = [];
+            options.pushObject({ value: 1, label: '1' });
+            options.pushObject({ value: 2, label: '2' });
+            options.pushObject({ value: 3, label: '3' });
+            options.pushObject({ value: 4, label: '4' });
+            options.pushObject({ value: 5, label: '5' });
+            options.pushObject({ value: 6, label: '6' });
+            options.pushObject({ value: 7, label: '7' });
+            options.pushObject({ value: 8, label: '8' });
+            options.pushObject({ value: 9, label: '9' });
+            options.pushObject({ value: 10, label: '10' });
+            return options;
+        }).property('annotation.weight', 'data.weight'),
 
         variantList: (function () {
             var variants = [{ value: 0, label: 'Base' }],
@@ -603,6 +632,8 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
             var mappings = [],
                 annotations = this.get('data.annotations'),
                 required = this.get('data.required'),
+                is_required = this.get('data.is_required'),
+                weight = this.get('data.weight'),
                 attributes = this.get('attributeValues'),
                 nameMap = this.get('fieldIdNameMap');
             for (var key in annotations) {
@@ -621,6 +652,8 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 if (key in attributes) {
                     annotation.content = attributes[key].substring(0, 400);
                 }
+                annotation.is_required = is_required;
+                annotation.weight = weight;
                 mappings.push(annotation);
             }
             return mappings;
@@ -670,10 +703,14 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
             }
             if (annotation) {
                 var annotations = annotation.annotations || {},
-                    required = annotation.required || [];
+                    required = annotation.required || [],
+                    is_required = annotation.is_required || false,
+                    weight = annotation.weight || 1.0;
                 this.set('data', annotation);
                 this.set('data.annotations', annotations);
                 this.set('data.required', required);
+                this.set('data.is_required', is_required);
+                this.set('data.weight', weight);
                 this.set('data.variant', this.getWithDefault('data.variant', 0));
             } else {
                 this.sendAction('dissmissAllSuggestions');
@@ -1971,8 +2008,8 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   var el2 = dom.createTextNode("\n                    ");
                   dom.appendChild(el1, el2);
                   var el2 = dom.createElement("div");
-                  dom.setAttribute(el2,"class","col-md-4");
-                  dom.setAttribute(el2,"style","width:115px;max-height:80px;overflow:hidden;text-overflow:ellipsis;");
+                  dom.setAttribute(el2,"class","col-md-2");
+                  dom.setAttribute(el2,"style","max-height:80px;overflow:hidden;text-overflow:ellipsis;");
                   var el3 = dom.createTextNode("\n                        ");
                   dom.appendChild(el2, el3);
                   var el3 = dom.createComment("");
@@ -1983,7 +2020,7 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   var el2 = dom.createTextNode("\n                    ");
                   dom.appendChild(el1, el2);
                   var el2 = dom.createElement("div");
-                  dom.setAttribute(el2,"class","col-md-3");
+                  dom.setAttribute(el2,"class","col-md-2");
                   var el3 = dom.createTextNode("\n                        ");
                   dom.appendChild(el2, el3);
                   var el3 = dom.createComment("");
@@ -1994,7 +2031,18 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   var el2 = dom.createTextNode("\n                    ");
                   dom.appendChild(el1, el2);
                   var el2 = dom.createElement("div");
-                  dom.setAttribute(el2,"class","col-md-1");
+                  dom.setAttribute(el2,"class","col-md-2");
+                  var el3 = dom.createTextNode("\n                        ");
+                  dom.appendChild(el2, el3);
+                  var el3 = dom.createComment("");
+                  dom.appendChild(el2, el3);
+                  var el3 = dom.createTextNode("\n                    ");
+                  dom.appendChild(el2, el3);
+                  dom.appendChild(el1, el2);
+                  var el2 = dom.createTextNode("\n                    ");
+                  dom.appendChild(el1, el2);
+                  var el2 = dom.createElement("div");
+                  dom.setAttribute(el2,"class","col-md-2");
                   var el3 = dom.createTextNode("\n                        ");
                   dom.appendChild(el2, el3);
                   var el3 = dom.createComment("");
@@ -2039,19 +2087,21 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                     fragment = this.build(dom);
                   }
                   var element0 = dom.childAt(fragment, [1]);
-                  var element1 = dom.childAt(element0, [7]);
+                  var element1 = dom.childAt(element0, [9]);
                   var morph0 = dom.createMorphAt(dom.childAt(element0, [1]),1,1);
                   var morph1 = dom.createMorphAt(dom.childAt(element0, [3]),1,1);
                   var morph2 = dom.createMorphAt(dom.childAt(element0, [5]),1,1);
-                  var morph3 = dom.createMorphAt(element1,1,1);
-                  var morph4 = dom.createMorphAt(element1,3,3);
+                  var morph3 = dom.createMorphAt(dom.childAt(element0, [7]),1,1);
+                  var morph4 = dom.createMorphAt(element1,1,1);
+                  var morph5 = dom.createMorphAt(element1,3,3);
                   set(env, context, "annotation", blockArguments[0]);
                   set(env, context, "index", blockArguments[1]);
                   inline(env, morph0, context, "item-select", [], {"options": get(env, context, "attributes"), "value": get(env, context, "annotation.attribute"), "changed": "updateAttribute", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
                   inline(env, morph1, context, "collapsible-text", [], {"fullText": get(env, context, "annotation.content"), "trimTo": 100, "title": get(env, context, "annotation.content")});
                   inline(env, morph2, context, "item-select", [], {"options": get(env, context, "itemFields"), "value": get(env, context, "annotation.field"), "changed": "updateField", "width": "82px", "name": get(env, context, "index")});
-                  inline(env, morph3, context, "check-box", [], {"checked": get(env, context, "annotation.required"), "action": "updateRequired", "name": get(env, context, "index"), "value": get(env, context, "annotation.required"), "style": "margin:3px;"});
-                  inline(env, morph4, context, "bs-button", [], {"clicked": "removeMapping", "clickedParam": get(env, context, "index"), "icon": "fa fa-icon fa-times", "size": "xs", "type": "danger", "title": "Remove Mapping"});
+                  inline(env, morph3, context, "item-select", [], {"options": get(env, context, "weightFields"), "value": get(env, context, "annotation.weight"), "changed": "updateWeight", "width": "50px", "name": get(env, context, "index"), "addSelected": true});
+                  inline(env, morph4, context, "check-box", [], {"checked": get(env, context, "annotation.required"), "action": "updateRequired", "name": get(env, context, "index"), "value": get(env, context, "annotation.required"), "style": "margin:3px;"});
+                  inline(env, morph5, context, "bs-button", [], {"clicked": "removeMapping", "clickedParam": get(env, context, "index"), "icon": "fa fa-icon fa-times", "size": "xs", "type": "danger", "title": "Remove Mapping"});
                   return fragment;
                 }
               };
@@ -2267,7 +2317,7 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                 var el2 = dom.createTextNode("\n            ");
                 dom.appendChild(el1, el2);
                 var el2 = dom.createElement("div");
-                dom.setAttribute(el2,"class","col-md-4 small-label");
+                dom.setAttribute(el2,"class","col-md-2 small-label");
                 var el3 = dom.createTextNode("Value");
                 dom.appendChild(el2, el3);
                 dom.appendChild(el1, el2);
@@ -2281,7 +2331,14 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                 var el2 = dom.createTextNode("\n            ");
                 dom.appendChild(el1, el2);
                 var el2 = dom.createElement("div");
-                dom.setAttribute(el2,"class","col-md-3 small-label");
+                dom.setAttribute(el2,"class","col-md-2 small-label");
+                var el3 = dom.createTextNode("Weight");
+                dom.appendChild(el2, el3);
+                dom.appendChild(el1, el2);
+                var el2 = dom.createTextNode("\n            ");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createElement("div");
+                dom.setAttribute(el2,"class","col-md-2 small-label");
                 var el3 = dom.createTextNode("Required");
                 dom.appendChild(el2, el3);
                 dom.appendChild(el1, el2);
@@ -9327,7 +9384,7 @@ define('portia-web/models/annotation', ['exports', 'ember', 'portia-web/models/s
 
         idBinding: null,
 
-        serializedProperties: ['id', 'variant', 'annotations', 'required', 'generated'],
+        serializedProperties: ['id', 'variant', 'annotations', 'required', 'generated', 'is_required', 'weight'],
 
         name: (function () {
             var annotations = this.get('annotations');
@@ -9348,6 +9405,10 @@ define('portia-web/models/annotation', ['exports', 'ember', 'portia-web/models/s
         annotations: null,
 
         required: null,
+
+        is_required: false,
+
+        weight: 1.0,
 
         generated: false,
 
@@ -9619,8 +9680,10 @@ define('portia-web/models/item-field', ['exports', 'portia-web/models/simple-mod
     'use strict';
 
     exports['default'] = SimpleModel['default'].extend({
-        serializedProperties: ['name', 'type', 'required', 'vary'],
+        serializedProperties: ['name', 'type', 'is_required', 'weight', 'required', 'vary'],
         type: 'text',
+        is_required: false,
+        weight: 1.0,
         required: false,
         vary: false
     });

@@ -96,6 +96,10 @@ export default Ember.Component.extend(GuessTypes, {
             }
         },
 
+        updateWeight: function(value, index) {
+            this.setAttr(index, value, 'weight');
+        },
+
         updateAttribute: function(value, index) {
             this.setAttr(index, value, 'attribute');
         },
@@ -261,6 +265,8 @@ export default Ember.Component.extend(GuessTypes, {
             data = {
                 annotations: {},
                 required: [],
+                is_required: false,
+                weight: 1.0,
                 variant: 0,
                 id: utils.shortGuid(),
                 tagid: element.data('tagid')
@@ -300,8 +306,10 @@ export default Ember.Component.extend(GuessTypes, {
         if ((required || required === false) && annotation['required'] !== required) {
             try {
                 annotation.set('required', required);
+                annotation.set('is_required', required);
             } catch(e) {
                 annotation['required'] = required;
+                annotation['is_required'] = required;
             }
             update = true;
         }
@@ -334,7 +342,9 @@ export default Ember.Component.extend(GuessTypes, {
     updateAnnotations: function() {
         var annotations = {},
             required = [],
-            idMap = this.get('fieldNameIdMap');
+            idMap = this.get('fieldNameIdMap'),
+            is_required = false,
+            weight = 1;
         this.get('mappings').forEach(function(annotation) {
             var attribute = annotation['attribute'],
                 field = annotation['field'];
@@ -349,9 +359,13 @@ export default Ember.Component.extend(GuessTypes, {
             if (annotation['required']) {
                 required.push(field);
             }
+            is_required = annotation.is_required;
+            weight = annotation.weight;
         });
         this.set('data.annotations', annotations);
         this.set('data.required', required);
+        this.set('data.is_required', is_required);
+        this.set('data.weight', parseFloat(weight));
         if (this.get('mappedElement').attr('content')) {
             this.set('data.text-content', 'text content');
         }
@@ -400,6 +414,21 @@ export default Ember.Component.extend(GuessTypes, {
         options.pushObject({ value: '#create', label: '-create new-' });
         return options;
     }.property('item.fields.@each'),
+
+    weightFields: function() {
+        var options = [];
+        options.pushObject({ value: 1, label: '1' });
+        options.pushObject({ value: 2, label: '2' });
+        options.pushObject({ value: 3, label: '3' });
+        options.pushObject({ value: 4, label: '4' });
+        options.pushObject({ value: 5, label: '5' });
+        options.pushObject({ value: 6, label: '6' });
+        options.pushObject({ value: 7, label: '7' });
+        options.pushObject({ value: 8, label: '8' });
+        options.pushObject({ value: 9, label: '9' });
+        options.pushObject({ value: 10, label: '10' });
+        return options;
+    }.property('annotation.weight', 'data.weight'),
 
     variantList: function() {
         var variants = [{value: 0, label: 'Base'}],
@@ -564,6 +593,8 @@ export default Ember.Component.extend(GuessTypes, {
         var mappings = [],
             annotations = this.get('data.annotations'),
             required = this.get('data.required'),
+            is_required = this.get('data.is_required'),
+            weight = this.get('data.weight'),
             attributes = this.get('attributeValues'),
             nameMap = this.get('fieldIdNameMap');
         for (var key in annotations) {
@@ -582,6 +613,8 @@ export default Ember.Component.extend(GuessTypes, {
             if (key in attributes) {
                 annotation.content = attributes[key].substring(0, 400);
             }
+            annotation.is_required = is_required;
+            annotation.weight = weight;
             mappings.push(annotation);
         }
         return mappings;
@@ -630,10 +663,14 @@ export default Ember.Component.extend(GuessTypes, {
         }
         if (annotation) {
             var annotations = annotation.annotations || {},
-                required = annotation.required || [];
+                required = annotation.required || [],
+                is_required = annotation.is_required || false,
+                weight = annotation.weight || 1.0;
             this.set('data', annotation);
             this.set('data.annotations', annotations);
             this.set('data.required', required);
+            this.set('data.is_required', is_required);
+            this.set('data.weight', weight);
             this.set('data.variant', this.getWithDefault('data.variant', 0));
         } else {
             this.sendAction('dissmissAllSuggestions');

@@ -149,7 +149,7 @@ class Train(ScrapelyResource):
         country_code = spider_spec['country_code']
         kipp_country_setting_dir = KIPP_MERCHANT_SETTINGS_DIR.format(country_code=country_code)
         if not os.path.exists(kipp_country_setting_dir):
-          os.makedirs(KIPP_MERCHANT_SETTINGS_DIR)
+          os.makedirs(kipp_country_setting_dir)
         merchant_file_path = kipp_country_setting_dir + '/' + merchant_name + '.py'
         country_code = spider_spec['country_code']
         currency_code = spider_spec['currency_code']

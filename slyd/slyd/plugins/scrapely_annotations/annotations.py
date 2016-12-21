@@ -20,6 +20,8 @@ class Annotations(object):
                     annotatations: {"content": "Title"},
                     id: "id-string",
                     required: [],
+                    is_required: false,
+                    weight: 1.0,
                     tagid: 12,
                     variant: 0
                     ignore: True,
@@ -75,6 +77,8 @@ def _gen_annotation_info(annotation):
             'id': annotation.get('id', _gen_id()),
             'annotations': annotation.get('annotations', {}),
             'required': annotation.get('required', []),
+            'is_required': annotation.get('is_required', False),
+            'weight': float(annotation.get('weight', 1.0)),
             'variant': int(annotation.get('variant', 0)),
             'generated': annotation.get('generated', False),
             'text-content': annotation.get('text-content', 'content'),
