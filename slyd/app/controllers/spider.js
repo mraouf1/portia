@@ -37,6 +37,62 @@ export default BaseController.extend({
     countryCodes: ["eg", "sa", "ae"],
     currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
 
+    englishUrl: function(){
+        return this.get('model.english_url');
+    }.property('model.english_url'),
+
+    englishUrlArgs: function(){
+        return this.get('model.english_url_args');
+    }.property('model.english_url_args'),
+
+    arabicUrl: function(){
+        return this.get('model.arabic_url');
+    }.property('model.arabic_url'),
+
+    arabicUrlArgs: function(){
+        return this.get('model.arabic_url_args');
+    }.property('model.arabic_url_args'),
+
+    englishUrlAction: 'addEnglishUrl',
+    englishUrlArgsAction: 'addEnglishUrlArgs',
+    arabicUrlAction: 'addArabicUrl',
+    arabicUrlArgsAction: 'addArabicUrlArgs',
+
+    toggleCookiesAction: 'toggleCookies',
+    toggleCurrencyCookiesAction: 'toggleCurrencyCookies',
+
+    enCookieName: function(){
+        return this.get('model.english_cookie_name');
+    }.property('model.english_cookie_name'),
+
+    enCookieValue: function(){
+        return this.get('model.english_cookie_value');
+    }.property('model.english_cookie_value'),
+
+    arCookieName: function(){
+        return this.get('model.arabic_cookie_name');
+    }.property('model.arabic_cookie_name'),
+
+    arCookieValue: function(){
+        return this.get('model.arabic_cookie_value');
+    }.property('model.arabic_cookie_value'),
+
+    enCookieNameAction: 'addEnCookieName',
+    enCookieValueAction: 'addEnCookieValue',
+    arCookieNameAction: 'addArCookieName',
+    arCookieValueAction: 'addArCookieValue',
+
+    currencyCookieName: function(){
+        return this.get('model.currency_cookie_name');
+    }.property('model.currency_cookie_name'),
+
+    currencyCookieValue: function(){
+        return this.get('model.currency_cookie_value');
+    }.property('model.currency_cookie_value'),
+
+    currencyCookieNameAction: 'addCurrencyCookieName',
+    currencyCookieValueAction: 'addCurrencyCookieValue',
+
     followPatternOptions: [
         { value: 'all', label: 'Follow all in-domain links' },
         { value: 'none', label: "Don't follow links" },
@@ -153,6 +209,48 @@ export default BaseController.extend({
     loginPassword: function() {
         return this._get_init_request_property('password');
     }.property('model.init_requests'),
+
+    getCookies: function() {
+        if(this.get('model.cookies_enabled') || this.get('model.use_currency_cookies')) {
+            var currentUrl = this.get('currentUrl');
+            this.get('documentView').hideLoading();
+            this.set('testing', false);
+            this.showSuccessNotification("Detecting cookies started",
+                              "Detecting cookies process started successfully");
+            this.get('slyd').getCookies(currentUrl).then((cookies)=>{
+            this.generateTable(cookies);
+            },
+            () => { this.showSuccessNotification("Detecting cookies finished",
+                "Detecting cookies process finished successfully");}).catch(function(err){
+                throw err;
+            });
+        }
+    },
+
+    generateTable: function(cookies) {
+        var table = document.createElement("TABLE");
+        table.border = "1";
+        for (var key in cookies) {
+            if(cookies.hasOwnProperty(key)){
+                var cookie = cookies[key];
+                for (var prop in cookie) {
+                    if(cookie.hasOwnProperty(prop)){
+                        var row = table.insertRow(-1);
+                        var cell1 = row.insertCell(-1);
+                        cell1.innerHTML = prop;
+                        var cell2 = row.insertCell(-1);
+                        cell2.innerHTML = cookie[prop];
+                    }
+                }
+            }
+        }
+        var dvTables = document.getElementsByClassName("dvTable");
+        var i;
+        for (i= 0; i < dvTables.length; i++) {
+            dvTables[i].innerHTML = "";
+            dvTables[i].appendChild(table.cloneNode(true));
+        }
+    },
 
     spiderDomains: function() {
         var spiderDomains = new Set();
@@ -298,6 +396,86 @@ export default BaseController.extend({
         if (code) {
             this.set('model.currency_code', code);
         }
+    },
+
+    addEnglishUrl: function(url){
+        if(url) {
+            this.set('model.english_url', url);
+        }
+    },
+
+    addEnglishUrlArgs: function(args){
+        if(args) {
+            this.set('model.english_url_args', args);
+        }
+    },
+
+    addArabicUrl: function(url){
+        if(url) {
+            this.set('model.arabic_url', url);
+        }
+    },
+
+    addArabicUrlArgs: function(args){
+        if(args) {
+            this.set('model.arabic_url_args', args);
+        }
+    },
+
+    toggleCookies: function(){
+        if(this.get('model.cookies_enabled')){
+            this.set('model.cookies_enabled', false);
+        }else{
+            this.set('model.cookies_enabled', true);
+        }
+    },
+
+    toggleCurrencyCookies: function(){
+        if(this.get('model.use_currency_cookies')){
+            this.set('model.use_currency_cookies', false);
+        }else{
+            this.set('model.use_currency_cookies', true);
+        }
+    },
+
+    addEnCookieName: function(name){
+        if(name){
+            this.set('model.english_cookie_name', name);
+        }else{
+            this.set('model.english_cookie_name', '');
+        }
+    },
+
+    addEnCookieValue: function(value){
+        if(value){
+            this.set('model.english_cookie_value', value);
+        }else{
+            this.set('model.english_cookie_value', '');
+        }
+    },
+
+    addArCookieName: function(name){
+        if(name){
+            this.set('model.arabic_cookie_name', name);
+        }else{
+            this.set('model.arabic_cookie_name', '');
+        }
+    },
+
+    addArCookieValue: function(value){
+        if(name){
+            this.set('model.arabic_cookie_value', value);
+        }else{
+            this.set('model.arabic_cookie_value', value);
+        }
+    },
+
+    addCurrencyCookieName: function(name){
+        this.set('model.currency_cookie_name', name);
+    },
+
+    addCurrencyCookieValue: function(value){
+        this.set('model.currency_cookie_value', value);
     },
 
     addExcludePattern: function(pattern, index) {
@@ -469,6 +647,58 @@ export default BaseController.extend({
             this.addCurrencyCode(code);
         },
 
+        addEnglishUrl: function(url){
+            this.addEnglishUrl(url);
+        },
+
+        addEnglishUrlArgs: function(args){
+            this.addEnglishUrlArgs(args);
+        },
+
+        addArabicUrl: function(url){
+            this.addArabicUrl(url);
+        },
+
+        addArabicUrlArgs: function(args){
+            this.addArabicUrlArgs(args);
+        },
+
+        toggleCookies: function(){
+            this.toggleCookies();
+        },
+
+        toggleCurrencyCookies: function(){
+            this.toggleCurrencyCookies();
+        },
+
+        addEnCookieName: function(name){
+            this.addEnCookieName(name);
+        },
+
+        addEnCookieValue: function(value){
+            this.addEnCookieValue(value);
+        },
+
+        addArCookieName: function(name){
+            this.addArCookieName(name);
+        },
+
+        addArCookieValue: function(value){
+            this.addArCookieValue(value);
+        },
+
+        addCurrencyCookieName: function(name){
+            this.addCurrencyCookieName(name);
+        },
+
+        addCurrencyCookieValue: function(value){
+            this.addCurrencyCookieValue(value);
+        },
+
+        detectCookies: function(){
+            this.getCookies();
+        },
+
         deleteStartUrl: function(url) {
             this.get('model.start_urls').removeObject(url);
         },
@@ -546,6 +776,19 @@ export default BaseController.extend({
                     this.showErrorNotification(err.toString());
                 }.bind(this)
             );
+        },
+
+        getCookies: function() {
+            if (this.get('testing')) {
+                this.get('pendingUrls').clear();
+            } else {
+                this.set('testing', true);
+                this.get('documentView').showLoading();
+                this.get('extractedItems').clear();
+                this.set('showItems', true);
+                this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
+                this.getCookies();
+            }
         },
 
         testSpider: function() {
