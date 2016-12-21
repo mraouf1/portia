@@ -695,6 +695,31 @@ export var SlydApi = Ember.Object.extend({
     },
 
     /**
+    @public
+
+    Detect cookies using current url.
+
+    @method getCookies
+    @for this
+    @param {String} [currentUrl] the currentUrl of the page.
+    @return {Promise} a promise that fulfills with an {Object} containing
+        the cookies set by the website when requesting that url.
+    */
+    getCookies: function(currentUrl) {
+        var hash = {};
+        hash.type = 'POST';
+        var data = { current_url: currentUrl || this.get('currentUrl') };
+        hash.data = data;
+        hash.url = this.get('botUrl') + 'getCookies';
+        return this.makeAjaxCall(hash).then(function(cookies) {
+            return cookies;
+        }.bind(this), function(err) {
+            err.title = 'Failed to get cookies';
+            throw err;
+        });
+    },
+
+    /**
     @private
 
     Transforms a list of the form:

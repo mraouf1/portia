@@ -6517,6 +6517,50 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         countryCodes: ["eg", "sa", "ae"],
         currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
 
+        englishUrl: (function () {
+            return this.get('model.english_url');
+        }).property('model.english_url'),
+
+        englishUrlArgs: (function () {
+            return this.get('model.english_url_args');
+        }).property('model.english_url_args'),
+
+        arabicUrl: (function () {
+            return this.get('model.arabic_url');
+        }).property('model.arabic_url'),
+
+        arabicUrlArgs: (function () {
+            return this.get('model.arabic_url_args');
+        }).property('model.arabic_url_args'),
+
+        englishUrlAction: 'addEnglishUrl',
+        englishUrlArgsAction: 'addEnglishUrlArgs',
+        arabicUrlAction: 'addArabicUrl',
+        arabicUrlArgsAction: 'addArabicUrlArgs',
+
+        toggleCookiesAction: 'toggleCookies',
+
+        enCookieName: (function () {
+            return this.get('model.english_cookie_name');
+        }).property('model.english_cookie_name'),
+
+        enCookieValue: (function () {
+            return this.get('model.english_cookie_value');
+        }).property('model.english_cookie_value'),
+
+        arCookieName: (function () {
+            return this.get('model.arabic_cookie_name');
+        }).property('model.arabic_cookie_name'),
+
+        arCookieValue: (function () {
+            return this.get('model.arabic_cookie_value');
+        }).property('model.arabic_cookie_value'),
+
+        enCookieNameAction: 'addEnCookieName',
+        enCookieValueAction: 'addEnCookieValue',
+        arCookieNameAction: 'addArCookieName',
+        arCookieValueAction: 'addArCookieValue',
+
         followPatternOptions: [{ value: 'all', label: 'Follow all in-domain links' }, { value: 'none', label: "Don't follow links" }, { value: 'patterns', label: 'Configure follow and exclude patterns' }],
 
         hasStartUrls: (function () {
@@ -6625,6 +6669,47 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             return this._get_init_request_property('password');
         }).property('model.init_requests'),
 
+        getCookies: function getCookies() {
+            var _this = this;
+
+            if (this.get('model.cookies_enabled')) {
+                var currentUrl = this.get('currentUrl');
+                this.get('documentView').hideLoading();
+                this.set('testing', false);
+                this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
+                this.get('slyd').getCookies(currentUrl).then(function (cookies) {
+                    _this.generateTable(cookies);
+                }, function () {
+                    _this.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+                })['catch'](function (err) {
+                    throw err;
+                });
+            }
+        },
+
+        generateTable: function generateTable(cookies) {
+            console.log(cookies);
+            var table = document.createElement("TABLE");
+            table.border = "1";
+            for (var key in cookies) {
+                if (cookies.hasOwnProperty(key)) {
+                    var cookie = cookies[key];
+                    for (var prop in cookie) {
+                        if (cookie.hasOwnProperty(prop)) {
+                            var row = table.insertRow(-1);
+                            var cell1 = row.insertCell(-1);
+                            cell1.innerHTML = prop;
+                            var cell2 = row.insertCell(-1);
+                            cell2.innerHTML = cookie[prop];
+                        }
+                    }
+                }
+            }
+            var dvTable = document.getElementById("dvTable");
+            dvTable.innerHTML = "";
+            dvTable.appendChild(table);
+        },
+
         spiderDomains: (function () {
             var spiderDomains = new Set();
             this.get('model.start_urls').forEach(function (startUrl) {
@@ -6694,7 +6779,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         addTemplate: function addTemplate() {
-            var _this = this;
+            var _this2 = this;
 
             var iframeTitle = this.get('documentView').getIframe()[0].title.trim().replace(/[^a-z\s_-]/ig, '').replace(/\s+/g, '_').substring(0, 48).replace(/_+$/, '') || utils['default'].shortGuid();
 
@@ -6725,14 +6810,14 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             var serialized = template.serialize();
             serialized._new = true;
             this.get('ws').save('template', serialized).then(function (data) {
-                var mutations = _this.get('documentView.mutationsAfterLoaded');
+                var mutations = _this2.get('documentView.mutationsAfterLoaded');
                 if (!data.saved.template._uses_js && mutations > 1) {
-                    _this.showWarningNotification('JavaScript is disabled', _this.get('messages.template_js_disabled'));
+                    _this2.showWarningNotification('JavaScript is disabled', _this2.get('messages.template_js_disabled'));
                 }
             }).then(function () {
-                return _this.saveSpider(true);
+                return _this2.saveSpider(true);
             }).then(function () {
-                _this.editTemplate(template_name);
+                _this2.editTemplate(template_name);
             });
         },
 
@@ -6758,6 +6843,70 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         addCurrencyCode: function addCurrencyCode(code) {
             if (code) {
                 this.set('model.currency_code', code);
+            }
+        },
+
+        addEnglishUrl: function addEnglishUrl(url) {
+            if (url) {
+                this.set('model.english_url', url);
+            }
+        },
+
+        addEnglishUrlArgs: function addEnglishUrlArgs(args) {
+            if (args) {
+                this.set('model.english_url_args', args);
+            }
+        },
+
+        addArabicUrl: function addArabicUrl(url) {
+            if (url) {
+                this.set('model.arabic_url', url);
+            }
+        },
+
+        addArabicUrlArgs: function addArabicUrlArgs(args) {
+            if (args) {
+                this.set('model.arabic_url_args', args);
+            }
+        },
+
+        toggleCookies: function toggleCookies() {
+            if (this.get('model.cookies_enabled')) {
+                this.set('model.cookies_enabled', false);
+            } else {
+                this.set('model.cookies_enabled', true);
+            }
+        },
+
+        addEnCookieName: function addEnCookieName(name) {
+            if (name) {
+                this.set('model.english_cookie_name', name);
+            } else {
+                this.set('model.english_cookie_name', '');
+            }
+        },
+
+        addEnCookieValue: function addEnCookieValue(value) {
+            if (value) {
+                this.set('model.english_cookie_value', value);
+            } else {
+                this.set('model.english_cookie_value', '');
+            }
+        },
+
+        addArCookieName: function addArCookieName(name) {
+            if (name) {
+                this.set('model.arabic_cookie_name', name);
+            } else {
+                this.set('model.arabic_cookie_name', '');
+            }
+        },
+
+        addArCookieValue: function addArCookieValue(value) {
+            if (name) {
+                this.set('model.arabic_cookie_value', value);
+            } else {
+                this.set('model.arabic_cookie_value', value);
             }
         },
 
@@ -6794,7 +6943,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         }).observes('model'),
 
         saveSpider: function saveSpider() {
-            var _this2 = this;
+            var _this3 = this;
 
             var force = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
 
@@ -6803,25 +6952,25 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             }
             this.set('saving', true);
             return this.get('ws').save('spider', this.get('model'))['finally'](function () {
-                if (!_this2.isDestroying) {
-                    _this2.set('saving', false);
+                if (!_this3.isDestroying) {
+                    _this3.set('saving', false);
                 }
             });
         },
 
         testSpider: function testSpider() {
-            var _this3 = this;
+            var _this4 = this;
 
             var urls = this.get('pendingUrls');
 
             var addItems = function addItems(data) {
-                var items = (data.items || []).map(_this3.wrapItem, _this3);
-                _this3.get('extractedItems').pushObjects(items);
+                var items = (data.items || []).map(_this4.wrapItem, _this4);
+                _this4.get('extractedItems').pushObjects(items);
             };
 
             var fetchNext = function fetchNext() {
                 if (urls.length) {
-                    return _this3.get('slyd').fetchDocument(urls.pop(), _this3.get('model.name')).then(addItems, utils['default'].showErrorNotification).then(fetchNext);
+                    return _this4.get('slyd').fetchDocument(urls.pop(), _this4.get('model.name')).then(addItems, utils['default'].showErrorNotification).then(fetchNext);
                 } else {
                     return new Ember['default'].RSVP.Promise(function (resolve) {
                         return resolve('done');
@@ -6830,13 +6979,13 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             };
 
             fetchNext().then(function () {
-                _this3.get('documentView').hideLoading();
-                _this3.set('testing', false);
+                _this4.get('documentView').hideLoading();
+                _this4.set('testing', false);
             });
         },
 
         trainScrapely: function trainScrapely() {
-            var _this4 = this;
+            var _this5 = this;
 
             var result = null;
 
@@ -6845,7 +6994,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             this.showSuccessNotification("Training scrapely started", "The training process of scrapely is started successfully");
 
             result = this.get('slyd').trainScrapely(this.get('model.name')).then(function () {
-                _this4.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
+                _this5.showSuccessNotification("Training scrapely finished", "The training process of scrapely is finished successfully");
             })['catch'](function (err) {
                 throw err;
             });
@@ -6937,6 +7086,46 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
                 this.addCurrencyCode(code);
             },
 
+            addEnglishUrl: function addEnglishUrl(url) {
+                this.addEnglishUrl(url);
+            },
+
+            addEnglishUrlArgs: function addEnglishUrlArgs(args) {
+                this.addEnglishUrlArgs(args);
+            },
+
+            addArabicUrl: function addArabicUrl(url) {
+                this.addArabicUrl(url);
+            },
+
+            addArabicUrlArgs: function addArabicUrlArgs(args) {
+                this.addArabicUrlArgs(args);
+            },
+
+            toggleCookies: function toggleCookies() {
+                this.toggleCookies();
+            },
+
+            addEnCookieName: function addEnCookieName(name) {
+                this.addEnCookieName(name);
+            },
+
+            addEnCookieValue: function addEnCookieValue(value) {
+                this.addEnCookieValue(value);
+            },
+
+            addArCookieName: function addArCookieName(name) {
+                this.addArCookieName(name);
+            },
+
+            addArCookieValue: function addArCookieValue(value) {
+                this.addArCookieValue(value);
+            },
+
+            detectCookies: function detectCookies() {
+                this.getCookies();
+            },
+
             deleteStartUrl: function deleteStartUrl(url) {
                 this.get('model.start_urls').removeObject(url);
             },
@@ -7011,6 +7200,19 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
                     this.set('model.name', oldName);
                     this.showErrorNotification(err.toString());
                 }).bind(this));
+            },
+
+            getCookies: function getCookies() {
+                if (this.get('testing')) {
+                    this.get('pendingUrls').clear();
+                } else {
+                    this.set('testing', true);
+                    this.get('documentView').showLoading();
+                    this.get('extractedItems').clear();
+                    this.set('showItems', true);
+                    this.get('pendingUrls').setObjects(this.get('model.start_urls').copy());
+                    this.getCookies();
+                }
             },
 
             testSpider: function testSpider() {
@@ -7099,7 +7301,7 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         },
 
         _willEnter: function _willEnter() {
-            var _this5 = this;
+            var _this6 = this;
 
             // willEnter spider.index controller
             this.get('extractedItems').setObjects([]);
@@ -7111,10 +7313,10 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
             });
             this.get('browseHistory').clear();
             Ember['default'].run.next(function () {
-                if (_this5.get('url')) {
-                    _this5.loadUrl(_this5.get('url'), _this5.get('baseurl'));
-                    _this5.set('url', null);
-                    _this5.set('baseurl', null);
+                if (_this6.get('url')) {
+                    _this6.loadUrl(_this6.get('url'), _this6.get('baseurl'));
+                    _this6.set('url', null);
+                    _this6.set('baseurl', null);
                 }
             });
         },
@@ -9464,7 +9666,7 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
     var ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns", "js_enable_patterns", "js_disable_patterns", "allowed_domains", "templates", "template_names", "page_actions"];
 
     exports['default'] = SimpleModel['default'].extend({
-        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code'],
+        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code', 'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args', 'cookies_enabled', 'english_cookie_name', 'english_cookie_value', 'arabic_cookie_name', 'arabic_cookie_value', 'use_cookies'],
         serializedRelations: ['templates'],
         start_urls: null,
         country_code: null,
@@ -9477,6 +9679,16 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
         template_names: null,
         init_requests: null,
         page_actions: null,
+        english_url: null,
+        english_url_args: null,
+        arabic_url: null,
+        arabic_url_args: null,
+        cookies_enabled: false,
+        english_cookie_name: null,
+        english_cookie_value: null,
+        arabic_cookie_name: null,
+        arabic_cookie_value: null,
+        use_cookies: false,
 
         init: function init() {
             var _this = this;
@@ -20188,11 +20400,11 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element11 = dom.childAt(fragment, [1]);
-              var element12 = dom.childAt(element11, [3]);
-              var morph0 = dom.createMorphAt(dom.childAt(element11, [1]),1,1);
-              var morph1 = dom.createMorphAt(element12,1,1);
-              var morph2 = dom.createMorphAt(element12,3,3);
+              var element15 = dom.childAt(fragment, [1]);
+              var element16 = dom.childAt(element15, [3]);
+              var morph0 = dom.createMorphAt(dom.childAt(element15, [1]),1,1);
+              var morph1 = dom.createMorphAt(element16,1,1);
+              var morph2 = dom.createMorphAt(element16,3,3);
               block(env, morph0, context, "bs-button", [], {"clicked": "loadUrl", "clickedParam": get(env, context, "url"), "type": "light", "title": get(env, context, "url"), "popoverPlacement": "left"}, child0, null);
               inline(env, morph1, context, "copy-clipboard", [], {"text": get(env, context, "url")});
               inline(env, morph2, context, "bs-button", [], {"clicked": "deleteStartUrl", "clickedParam": get(env, context, "url"), "icon": "fa fa-icon fa-trash", "type": "danger", "size": "xs"});
@@ -20309,11 +20521,11 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
               } else {
                 fragment = this.build(dom);
               }
-              var element10 = dom.childAt(fragment, [1]);
-              var morph0 = dom.createMorphAt(element10,3,3);
-              var morph1 = dom.createMorphAt(element10,7,7);
-              var morph2 = dom.createMorphAt(element10,11,11);
-              element(env, element10, context, "bind-attr", [], {"style": "ex_tiny_box_style"});
+              var element14 = dom.childAt(fragment, [1]);
+              var morph0 = dom.createMorphAt(element14,3,3);
+              var morph1 = dom.createMorphAt(element14,7,7);
+              var morph2 = dom.createMorphAt(element14,11,11);
+              element(env, element14, context, "bind-attr", [], {"style": "ex_tiny_box_style"});
               inline(env, morph0, context, "text-field", [], {"value": get(env, context, "loginUrl"), "name": "loginUrl", "width": "94%", "placeholder": "Login URL", "action": "updateLoginInfo", "update": "addInitRequest"});
               inline(env, morph1, context, "text-field", [], {"value": get(env, context, "loginUser"), "name": "loginUser", "width": "94%", "placeholder": "Login user", "action": "updateLoginInfo", "update": "addInitRequest"});
               inline(env, morph2, context, "text-field", [], {"value": get(env, context, "loginPassword"), "name": "loginPassword", "width": "94%", "placeholder": "Login password", "action": "updateLoginInfo", "update": "addInitRequest"});
@@ -20401,7 +20613,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             var el1 = dom.createTextNode("\n\n        ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
-            dom.setAttribute(el1,"style","margin-top:10px");
+            dom.setAttribute(el1,"style","margin-top:5px");
             dom.setAttribute(el1,"class","scrolling-container");
             var el2 = dom.createTextNode("\n            ");
             dom.appendChild(el1, el2);
@@ -20444,6 +20656,8 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
             return el0;
           },
           render: function render(context, env, contextualElement) {
@@ -20466,22 +20680,21 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             } else {
               fragment = this.build(dom);
             }
-            var element13 = dom.childAt(fragment, [1, 3]);
-            var element14 = dom.childAt(fragment, [3]);
-            var element15 = dom.childAt(fragment, [11]);
-            var morph0 = dom.createMorphAt(element13,1,1);
-            var morph1 = dom.createMorphAt(element13,3,3);
-            var morph2 = dom.createMorphAt(element14,1,1);
+            var element17 = dom.childAt(fragment, [1, 3]);
+            var element18 = dom.childAt(fragment, [3]);
+            var element19 = dom.childAt(fragment, [11]);
+            var morph0 = dom.createMorphAt(element17,1,1);
+            var morph1 = dom.createMorphAt(element17,3,3);
+            var morph2 = dom.createMorphAt(element18,1,1);
             var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
             var morph4 = dom.createMorphAt(dom.childAt(fragment, [7]),3,3);
             var morph5 = dom.createMorphAt(dom.childAt(fragment, [9]),3,3);
-            var morph6 = dom.createMorphAt(element15,3,3);
-            var morph7 = dom.createMorphAt(element15,5,5);
+            var morph6 = dom.createMorphAt(element19,3,3);
+            var morph7 = dom.createMorphAt(element19,5,5);
             var morph8 = dom.createMorphAt(fragment,13,13,contextualElement);
-            dom.insertBoundary(fragment, null);
             inline(env, morph0, context, "bs-badge", [], {"class": "pull-right btn-primary", "content": get(env, context, "startUrlCount")});
             block(env, morph1, context, "bs-button", [], {"type": get(env, context, "editAllStartUrlsType"), "clicked": get(env, context, "editAllStartUrlsAction"), "size": "xs", "disabled": get(env, context, "hasStartUrls"), "class": "pull-right"}, child0, null);
-            element(env, element14, context, "bind-attr", [], {"style": "tiny_box_style"});
+            element(env, element18, context, "bind-attr", [], {"style": "tiny_box_style"});
             block(env, morph2, context, "each", [get(env, context, "model.start_urls")], {"keyword": "url"}, child1, child2);
             inline(env, morph3, context, "text-area-with-button", [], {"placeholder": "Enter one or multiple start page urls here", "action": get(env, context, "startUrlsAction"), "reset": true, "value": get(env, context, "startUrls")});
             inline(env, morph4, context, "item-select", [], {"options": get(env, context, "countryCodes"), "value": get(env, context, "countryCode"), "changed": "addCountryCode", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
@@ -20494,6 +20707,273 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
         };
       }());
       var child1 = (function() {
+        var child0 = (function() {
+          var child0 = (function() {
+            return {
+              isHTMLBars: true,
+              revision: "Ember@1.11.4",
+              blockParams: 0,
+              cachedFragment: null,
+              hasRendered: false,
+              build: function build(dom) {
+                var el0 = dom.createDocumentFragment();
+                var el1 = dom.createTextNode("                        Detect Cookies\n");
+                dom.appendChild(el0, el1);
+                return el0;
+              },
+              render: function render(context, env, contextualElement) {
+                var dom = env.dom;
+                dom.detectNamespace(contextualElement);
+                var fragment;
+                if (env.useFragmentCache && dom.canClone) {
+                  if (this.cachedFragment === null) {
+                    fragment = this.build(dom);
+                    if (this.hasRendered) {
+                      this.cachedFragment = fragment;
+                    } else {
+                      this.hasRendered = true;
+                    }
+                  }
+                  if (this.cachedFragment) {
+                    fragment = dom.cloneNode(this.cachedFragment, true);
+                  }
+                } else {
+                  fragment = this.build(dom);
+                }
+                return fragment;
+              }
+            };
+          }());
+          return {
+            isHTMLBars: true,
+            revision: "Ember@1.11.4",
+            blockParams: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            build: function build(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"class","scrolling-container");
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("h4");
+              var el3 = dom.createTextNode("English cookie configuration ");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n\n                 ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"class","scrolling-container");
+              var el2 = dom.createTextNode("\n                     ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("h4");
+              var el3 = dom.createTextNode("Arabic cookie configuration ");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n\n                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"class","btn-center");
+              var el2 = dom.createTextNode("\n");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("                ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1,"style","margin-top:20px");
+              dom.setAttribute(el1,"id","dvTable");
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            render: function render(context, env, contextualElement) {
+              var dom = env.dom;
+              var hooks = env.hooks, get = hooks.get, inline = hooks.inline, block = hooks.block;
+              dom.detectNamespace(contextualElement);
+              var fragment;
+              if (env.useFragmentCache && dom.canClone) {
+                if (this.cachedFragment === null) {
+                  fragment = this.build(dom);
+                  if (this.hasRendered) {
+                    this.cachedFragment = fragment;
+                  } else {
+                    this.hasRendered = true;
+                  }
+                }
+                if (this.cachedFragment) {
+                  fragment = dom.cloneNode(this.cachedFragment, true);
+                }
+              } else {
+                fragment = this.build(dom);
+              }
+              var element10 = dom.childAt(fragment, [1]);
+              var element11 = dom.childAt(fragment, [3]);
+              var morph0 = dom.createMorphAt(element10,3,3);
+              var morph1 = dom.createMorphAt(element10,5,5);
+              var morph2 = dom.createMorphAt(element11,3,3);
+              var morph3 = dom.createMorphAt(element11,5,5);
+              var morph4 = dom.createMorphAt(dom.childAt(fragment, [5]),1,1);
+              inline(env, morph0, context, "text-field", [], {"placeholder": "Enter cookie name", "action": get(env, context, "enCookieNameAction"), "update": get(env, context, "enCookieNameAction"), "reset": true, "value": get(env, context, "enCookieName"), "width": "40%"});
+              inline(env, morph1, context, "text-field", [], {"placeholder": "Enter cookie value", "action": get(env, context, "enCookieValueAction"), "update": get(env, context, "enCookieValueAction"), "reset": true, "value": get(env, context, "enCookieValue"), "width": "40%"});
+              inline(env, morph2, context, "text-field", [], {"placeholder": "Enter cookie name", "action": get(env, context, "arCookieNameAction"), "update": get(env, context, "arCookieNameAction"), "reset": true, "value": get(env, context, "arCookieName"), "width": "40%"});
+              inline(env, morph3, context, "text-field", [], {"placeholder": "Enter cookie value", "action": get(env, context, "arCookieValueAction"), "update": get(env, context, "arCookieValueAction"), "reset": true, "value": get(env, context, "arCookieValue"), "width": "40%"});
+              block(env, morph4, context, "bs-button", [], {"clicked": "detectCookies", "clickedParam": get(env, context, "this"), "type": "primary", "title": "Detect Cookies"}, child0, null);
+              return fragment;
+            }
+          };
+        }());
+        return {
+          isHTMLBars: true,
+          revision: "Ember@1.11.4",
+          blockParams: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          build: function build(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:10px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("h4");
+            var el3 = dom.createTextNode("English URL configuration ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:20px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("h4");
+            var el3 = dom.createTextNode("Arabic URL configuration ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n\n            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"style","margin-top:20px");
+            dom.setAttribute(el1,"class","scrolling-container");
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("span");
+            dom.setAttribute(el2,"class","important-label");
+            var el3 = dom.createTextNode("Use Cookies");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n\n");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          render: function render(context, env, contextualElement) {
+            var dom = env.dom;
+            var hooks = env.hooks, get = hooks.get, inline = hooks.inline, block = hooks.block;
+            dom.detectNamespace(contextualElement);
+            var fragment;
+            if (env.useFragmentCache && dom.canClone) {
+              if (this.cachedFragment === null) {
+                fragment = this.build(dom);
+                if (this.hasRendered) {
+                  this.cachedFragment = fragment;
+                } else {
+                  this.hasRendered = true;
+                }
+              }
+              if (this.cachedFragment) {
+                fragment = dom.cloneNode(this.cachedFragment, true);
+              }
+            } else {
+              fragment = this.build(dom);
+            }
+            var element12 = dom.childAt(fragment, [1]);
+            var element13 = dom.childAt(fragment, [3]);
+            var morph0 = dom.createMorphAt(element12,3,3);
+            var morph1 = dom.createMorphAt(element12,5,5);
+            var morph2 = dom.createMorphAt(element13,3,3);
+            var morph3 = dom.createMorphAt(element13,5,5);
+            var morph4 = dom.createMorphAt(dom.childAt(fragment, [5]),3,3);
+            var morph5 = dom.createMorphAt(fragment,7,7,contextualElement);
+            inline(env, morph0, context, "text-field", [], {"placeholder": "Enter merchant English url", "action": get(env, context, "englishUrlAction"), "update": get(env, context, "englishUrlAction"), "reset": true, "value": get(env, context, "englishUrl"), "width": "94%"});
+            inline(env, morph1, context, "text-field", [], {"placeholder": "Enter url args", "action": get(env, context, "englishUrlArgsAction"), "update": get(env, context, "englishUrlArgsAction"), "reset": true, "value": get(env, context, "englishUrlArgs"), "width": "94%"});
+            inline(env, morph2, context, "text-field", [], {"placeholder": "Enter merchant Arabic url", "action": get(env, context, "arabicUrlAction"), "update": get(env, context, "arabicUrlAction"), "reset": true, "value": get(env, context, "arabicUrl"), "width": "94%"});
+            inline(env, morph3, context, "text-field", [], {"placeholder": "Enter url args", "action": get(env, context, "arabicUrlArgsAction"), "update": get(env, context, "arabicUrlArgsAction"), "reset": true, "value": get(env, context, "arabicUrlArgs"), "width": "94%"});
+            inline(env, morph4, context, "check-box", [], {"checked": get(env, context, "model.cookies_enabled"), "action": get(env, context, "toggleCookiesAction")});
+            block(env, morph5, context, "if", [get(env, context, "model.cookies_enabled")], {}, child0, null);
+            return fragment;
+          }
+        };
+      }());
+      var child2 = (function() {
         var child0 = (function() {
           return {
             isHTMLBars: true,
@@ -21342,7 +21822,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           }
         };
       }());
-      var child2 = (function() {
+      var child3 = (function() {
         var child0 = (function() {
           var child0 = (function() {
             return {
@@ -21557,7 +22037,7 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           }
         };
       }());
-      var child3 = (function() {
+      var child4 = (function() {
         var child0 = (function() {
           var child0 = (function() {
             var child0 = (function() {
@@ -21820,6 +22300,8 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
           var el0 = dom.createDocumentFragment();
           var el1 = dom.createComment("");
           dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
           var el1 = dom.createTextNode("\n");
           dom.appendChild(el0, el1);
           var el1 = dom.createComment("");
@@ -21855,15 +22337,17 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             fragment = this.build(dom);
           }
           var morph0 = dom.createMorphAt(fragment,0,0,contextualElement);
-          var morph1 = dom.createMorphAt(fragment,2,2,contextualElement);
-          var morph2 = dom.createMorphAt(fragment,4,4,contextualElement);
-          var morph3 = dom.createMorphAt(fragment,6,6,contextualElement);
+          var morph1 = dom.createMorphAt(fragment,1,1,contextualElement);
+          var morph2 = dom.createMorphAt(fragment,3,3,contextualElement);
+          var morph3 = dom.createMorphAt(fragment,5,5,contextualElement);
+          var morph4 = dom.createMorphAt(fragment,7,7,contextualElement);
           dom.insertBoundary(fragment, null);
           dom.insertBoundary(fragment, 0);
           block(env, morph0, context, "accordion-item", [], {"title": "Initialization"}, child0, null);
-          block(env, morph1, context, "accordion-item", [], {"title": "Crawling"}, child1, null);
-          block(env, morph2, context, "accordion-item", [], {"title": "Samples"}, child2, null);
-          block(env, morph3, context, "if", [get(env, context, "pageActionsEnabled")], {}, child3, null);
+          block(env, morph1, context, "accordion-item", [], {"title": "Language"}, child1, null);
+          block(env, morph2, context, "accordion-item", [], {"title": "Crawling"}, child2, null);
+          block(env, morph3, context, "accordion-item", [], {"title": "Samples"}, child3, null);
+          block(env, morph4, context, "if", [get(env, context, "pageActionsEnabled")], {}, child4, null);
           return fragment;
         }
       };
@@ -31781,6 +32265,29 @@ define('portia-web/utils/slyd-api', ['exports', 'ember', 'ic-ajax', 'portia-web/
             hash.url = this.get('scrapelyUrl') + 'train';
             return this.makeAjaxCall(hash)['catch'](function (err) {
                 err.title = 'Failed to train scrapely';
+                throw err;
+            });
+        },
+
+        /**
+        @public
+         Detect cookies using current url.
+         @method getCookies
+        @for this
+        @param {String} [currentUrl] the currentUrl of the page.
+        @return {Promise} a promise that fulfills with an {Object} containing
+            the cookies set by the website when requesting that url.
+        */
+        getCookies: function getCookies(currentUrl) {
+            var hash = {};
+            hash.type = 'POST';
+            var data = { current_url: currentUrl || this.get('currentUrl') };
+            hash.data = data;
+            hash.url = this.get('botUrl') + 'getCookies';
+            return this.makeAjaxCall(hash).then((function (cookies) {
+                return cookies;
+            }).bind(this), function (err) {
+                err.title = 'Failed to get cookies';
                 throw err;
             });
         },
