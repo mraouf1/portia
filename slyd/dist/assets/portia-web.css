@@ -358,7 +358,11 @@ ul.breadcrumbs {
     box-shadow: 0px 0px 9px 1px rgba(0,0,0,0.8);
     border-radius: 3px;
     border: none;
+<<<<<<< HEAD
     width: 400px;
+=======
+    width: 350px;
+>>>>>>> master
 }
 
 .in-doc .multimap {
@@ -861,7 +865,10 @@ input[type="checkbox"].offset-checkbox {
 .record-button .fa-circle {
     color: red;
 }
+<<<<<<< HEAD
 
 .full-width {
   width: 100%;
 }
+=======
+>>>>>>> master
