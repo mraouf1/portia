@@ -25,8 +25,8 @@
     "bower": "^1.3.12",
     "broccoli-asset-rev": "^2.0.0",
     "broccoli-concat": "0.0.13",
-    "broccoli-merge-trees": "^0.2.1",
     "broccoli-funnel": "^0.2.3",
+    "broccoli-merge-trees": "^0.2.1",
     "ember-breadcrumbs": "^0.1.1",
     "ember-cli": "^0.2.5",
     "ember-cli-auto-register-helpers": "^1.0.0",
@@ -42,6 +42,8 @@
     "es5-shim": "^4.1.5",
     "express": "^5.0.0-alpha.1",
     "glob": "^5.0.6",
+    "gulp": "^3.9.1",
+    "gulp-util": "^3.0.7",
     "mutation-summary": "0.0.0",
     "mutationobserver-shim": "^0.3.1",
     "rimraf": "^2.3.4"

@@ -4,9 +4,15 @@ var gulp = require('gulp'),
     concat = require('gulp-concat'),
     uglify = require('gulp-uglify'),
     minifyCSS = require('gulp-minify-css'),
-    ember_templates = require('gulp-ember-templates');
+    ember_templates = require('gulp-ember-templates'),
+    exec = require('child_process').exec;
 
 var src = {
+  main: [
+    './app/**/*.js',
+    './app/**/*.hbs',
+    './app/**/*.css'
+  ],
   js: {
     vendor_min: [
       './media/js/vendor/jquery-2.1.3.min.js',
@@ -85,14 +91,17 @@ gulp.task('minify_css', function() {
       gulp.src(src.css.app).pipe(minifyCSS()))
     .pipe(concat('style.min.css'))
     .pipe(gulp.dest('./media/css'))
-})
-
-gulp.task('watch', function () {
-  gulp.watch(src.css.app, ['minify_css']);
-  var js = src.js.app.concat(src.js.controllers).concat(src.templates);
-  gulp.watch(js, ['minify_js']);
 });
 
+// Execute ember build command
+gulp.task('buildEmber', function() {
+  exec('ember build');
+});
+
+// watch source files, then run emberBuild task
+gulp.task('watch', function () {
+  gulp.watch(src.main, ['buildEmber']);
+});
 
 gulp.task('optimize', ['minify_js', 'minify_css']);
-gulp.task('default', ['minify_js', 'minify_css', 'watch']);
+gulp.task('default', ['buildEmber', 'watch']);
