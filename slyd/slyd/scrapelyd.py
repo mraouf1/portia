@@ -7,6 +7,9 @@ import os
 import json
 
 MERCHANT_SETTING_BASE = """
+from scrapy.contrib.spiders import Rule
+from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
+
 # Automatically created by: slyd
 # -*- coding: utf-8 -*-
 LOG_FILE = '/var/kipp/logs/{merchant_name}.log'
@@ -165,7 +168,7 @@ class Train(ScrapelyResource):
         arabic_url_args = spider_spec['arabic_url_args']
         english_cookie_name = spider_spec['english_cookie_name']
         english_cookie_value = spider_spec['english_cookie_value']
-        arabic_cookie_name = spider_spec['english_url_args']
+        arabic_cookie_name = spider_spec['arabic_cookie_name']
         arabic_cookie_value = spider_spec['arabic_cookie_value']
         use_language_cookies = spider_spec['cookies_enabled']
         use_currency_cookies = spider_spec['use_currency_cookies']
