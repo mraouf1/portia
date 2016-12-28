@@ -74,21 +74,22 @@ export default Ember.Component.extend(GuessTypes, {
 
         updateField: function(value, index) {
             if (value === '#create') {
-                value = null;
-                this.set('createNewIndex', index);
-                var annotation = this.get('mappings').get(index),
-                    extractedData = annotation.content,
-                    attribute = annotation.attribute,
-                    element = this.get('mappedDOMElement'),
-                    guess = this.get('guessedAttribute') !== attribute;
-                this.set('guessedType', this.guessFieldType(extractedData, element, guess));
-                var name = this.guessFieldName(element);
-                if (this.get('itemFields').mapBy('value').contains(name)) {
-                    name = null;
-                }
-                this.set('guessedName', name ? name : 'Enter name');
-                this.set('defaultName', name);
-                this.setState(true, false, false);
+//                value = null;
+//                this.set('createNewIndex', index);
+//                var annotation = this.get('mappings').get(index),
+//                    extractedData = annotation.content,
+//                    attribute = annotation.attribute,
+//                    element = this.get('mappedDOMElement'),
+//                    guess = this.get('guessedAttribute') !== attribute;
+//                this.set('guessedType', this.guessFieldType(extractedData, element, guess));
+//                var name = this.guessFieldName(element);
+//                if (this.get('itemFields').mapBy('value').contains(name)) {
+//                if (this.get('itemFields').mapBy('value').contains(name)) {
+//                    name = null;
+//                }
+//                this.set('guessedName', name ? name : 'Enter name');
+//                this.set('defaultName', name);
+//                this.setState(true, false, false);
             } else if (value === '#sticky') {
                 this.setAttr(index, '#sticky', 'field', true);
             } else {
@@ -410,8 +411,9 @@ export default Ember.Component.extend(GuessTypes, {
             var name = field.get('name');
             return { value: name, label: name };
         });
-        options.pushObject({ value: '#sticky', label: '-just required-' });
-        options.pushObject({ value: '#create', label: '-create new-' });
+        // Commented to disable creating new fields
+        // options.pushObject({ value: '#sticky', label: '-just required-' });
+        // options.pushObject({ value: '#create', label: '-create new-' });
         return options;
     }.property('item.fields.@each'),
 
