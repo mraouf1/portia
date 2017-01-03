@@ -6937,24 +6937,32 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         addEnglishUrl: function addEnglishUrl(url) {
             if (url) {
                 this.set('model.english_url', url);
+            } else {
+                this.set('model.english_url', '');
             }
         },
 
         addEnglishUrlArgs: function addEnglishUrlArgs(args) {
             if (args) {
                 this.set('model.english_url_args', args);
+            } else {
+                this.set('model.english_url_args', '');
             }
         },
 
         addArabicUrl: function addArabicUrl(url) {
             if (url) {
                 this.set('model.arabic_url', url);
+            } else {
+                this.set('model.arabic_url', '');
             }
         },
 
         addArabicUrlArgs: function addArabicUrlArgs(args) {
             if (args) {
                 this.set('model.arabic_url_args', args);
+            } else {
+                this.set('model.arabic_url_args', '');
             }
         },
 
