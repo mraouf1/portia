@@ -116,26 +116,27 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
 
             updateField: function updateField(value, index) {
                 if (value === '#create') {
-                    value = null;
-                    this.set('createNewIndex', index);
-                    var annotation = this.get('mappings').get(index),
-                        extractedData = annotation.content,
-                        attribute = annotation.attribute,
-                        element = this.get('mappedDOMElement'),
-                        guess = this.get('guessedAttribute') !== attribute;
-                    this.set('guessedType', this.guessFieldType(extractedData, element, guess));
-                    var name = this.guessFieldName(element);
-                    if (this.get('itemFields').mapBy('value').contains(name)) {
-                        name = null;
-                    }
-                    this.set('guessedName', name ? name : 'Enter name');
-                    this.set('defaultName', name);
-                    this.setState(true, false, false);
+                    //                value = null;
+                    //                this.set('createNewIndex', index);
+                    //                var annotation = this.get('mappings').get(index),
+                    //                    extractedData = annotation.content,
+                    //                    attribute = annotation.attribute,
+                    //                    element = this.get('mappedDOMElement'),
+                    //                    guess = this.get('guessedAttribute') !== attribute;
+                    //                this.set('guessedType', this.guessFieldType(extractedData, element, guess));
+                    //                var name = this.guessFieldName(element);
+                    //                if (this.get('itemFields').mapBy('value').contains(name)) {
+                    //                if (this.get('itemFields').mapBy('value').contains(name)) {
+                    //                    name = null;
+                    //                }
+                    //                this.set('guessedName', name ? name : 'Enter name');
+                    //                this.set('defaultName', name);
+                    //                this.setState(true, false, false);
                 } else if (value === '#sticky') {
-                    this.setAttr(index, '#sticky', 'field', true);
-                } else {
-                    this.setAttr(index, value, 'field');
-                }
+                        this.setAttr(index, '#sticky', 'field', true);
+                    } else {
+                        this.setAttr(index, value, 'field');
+                    }
             },
 
             updateWeight: function updateWeight(value, index) {
@@ -450,8 +451,9 @@ define('portia-web/components/annotations-plugin/component', ['exports', 'ember'
                 var name = field.get('name');
                 return { value: name, label: name };
             });
-            options.pushObject({ value: '#sticky', label: '-just required-' });
-            options.pushObject({ value: '#create', label: '-create new-' });
+            // Commented to disable creating new fields
+            // options.pushObject({ value: '#sticky', label: '-just required-' });
+            // options.pushObject({ value: '#create', label: '-create new-' });
             return options;
         }).property('item.fields.@each'),
 
@@ -1118,7 +1120,14 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
           hasRendered: false,
           build: function build(dom) {
             var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("                Annotation suggestion\n");
+            var el1 = dom.createTextNode("            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("div");
+            dom.setAttribute(el1,"class","col-md-8");
+            var el2 = dom.createTextNode("\n                    Annotation suggestion\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
             dom.appendChild(el0, el1);
             return el0;
           },
@@ -1193,9 +1202,9 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
             } else {
               fragment = this.build(dom);
             }
-            var element6 = dom.childAt(fragment, [1]);
-            var morph0 = dom.createMorphAt(element6,1,1);
-            var morph1 = dom.createMorphAt(element6,3,3);
+            var element7 = dom.childAt(fragment, [1]);
+            var morph0 = dom.createMorphAt(element7,1,1);
+            var morph1 = dom.createMorphAt(element7,3,3);
             inline(env, morph0, context, "bs-button", [], {"clicked": "acceptSuggestion", "icon": "fa fa-icon fa-check", "title": "Accept suggestion", "type": "success", "size": "xs"});
             inline(env, morph1, context, "bs-button", [], {"clicked": "delete", "icon": "fa fa-icon fa-trash", "title": "Remove suggestion", "type": "warning", "size": "xs"});
             return fragment;
@@ -1215,14 +1224,20 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
               var el1 = dom.createTextNode("            ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("div");
-              dom.setAttribute(el1,"class","col-md-3");
               var el2 = dom.createTextNode("\n                ");
               dom.appendChild(el1, el2);
-              var el2 = dom.createComment("");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n                ");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createComment("");
+              var el2 = dom.createElement("span");
+              dom.setAttribute(el2,"class","pull-right");
+              var el3 = dom.createTextNode("\n                    ");
+              dom.appendChild(el2, el3);
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              var el3 = dom.createTextNode("\n                    ");
+              dom.appendChild(el2, el3);
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              var el3 = dom.createTextNode("\n                ");
+              dom.appendChild(el2, el3);
               dom.appendChild(el1, el2);
               var el2 = dom.createTextNode("\n            ");
               dom.appendChild(el1, el2);
@@ -1233,7 +1248,7 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
             },
             render: function render(context, env, contextualElement) {
               var dom = env.dom;
-              var hooks = env.hooks, inline = hooks.inline;
+              var hooks = env.hooks, get = hooks.get, subexpr = hooks.subexpr, concat = hooks.concat, attribute = hooks.attribute, inline = hooks.inline;
               dom.detectNamespace(contextualElement);
               var fragment;
               if (env.useFragmentCache && dom.canClone) {
@@ -1252,8 +1267,11 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                 fragment = this.build(dom);
               }
               var element5 = dom.childAt(fragment, [1]);
-              var morph0 = dom.createMorphAt(element5,1,1);
-              var morph1 = dom.createMorphAt(element5,3,3);
+              var element6 = dom.childAt(element5, [1]);
+              var attrMorph0 = dom.createAttrMorph(element5, 'class');
+              var morph0 = dom.createMorphAt(element6,1,1);
+              var morph1 = dom.createMorphAt(element6,3,3);
+              attribute(env, attrMorph0, element5, "class", concat(env, ["col-md-3 ", subexpr(env, context, "unless", [get(env, context, "data.suggested"), "col-md-offset-8"], {})]));
               inline(env, morph0, context, "bs-button", [], {"clicked": "delete", "icon": "fa fa-icon fa-trash", "title": "Delete Annotation", "type": "danger", "size": "xs"});
               inline(env, morph1, context, "bs-button", [], {"clicked": "dismiss", "icon": "fa fa-icon fa-close", "title": "Finish Editing", "size": "xs"});
               return fragment;
@@ -1997,6 +2015,29 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   var el2 = dom.createTextNode("\n                    ");
                   dom.appendChild(el1, el2);
                   var el2 = dom.createElement("div");
+                  dom.setAttribute(el2,"class","col-md-2");
+                  var el3 = dom.createTextNode("\n                        ");
+                  dom.appendChild(el2, el3);
+                  var el3 = dom.createComment("");
+                  dom.appendChild(el2, el3);
+                  var el3 = dom.createTextNode("\n                    ");
+                  dom.appendChild(el2, el3);
+                  dom.appendChild(el1, el2);
+                  var el2 = dom.createTextNode("\n                    ");
+                  dom.appendChild(el1, el2);
+                  var el2 = dom.createElement("div");
+                  dom.setAttribute(el2,"class","col-md-3");
+                  dom.setAttribute(el2,"style","max-height:80px;overflow:hidden;text-overflow:ellipsis;");
+                  var el3 = dom.createTextNode("\n                        ");
+                  dom.appendChild(el2, el3);
+                  var el3 = dom.createComment("");
+                  dom.appendChild(el2, el3);
+                  var el3 = dom.createTextNode("\n                    ");
+                  dom.appendChild(el2, el3);
+                  dom.appendChild(el1, el2);
+                  var el2 = dom.createTextNode("\n                    ");
+                  dom.appendChild(el1, el2);
+                  var el2 = dom.createElement("div");
                   dom.setAttribute(el2,"class","col-md-3");
                   var el3 = dom.createTextNode("\n                        ");
                   dom.appendChild(el2, el3);
@@ -2009,29 +2050,6 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   dom.appendChild(el1, el2);
                   var el2 = dom.createElement("div");
                   dom.setAttribute(el2,"class","col-md-2");
-                  dom.setAttribute(el2,"style","max-height:80px;overflow:hidden;text-overflow:ellipsis;");
-                  var el3 = dom.createTextNode("\n                        ");
-                  dom.appendChild(el2, el3);
-                  var el3 = dom.createComment("");
-                  dom.appendChild(el2, el3);
-                  var el3 = dom.createTextNode("\n                    ");
-                  dom.appendChild(el2, el3);
-                  dom.appendChild(el1, el2);
-                  var el2 = dom.createTextNode("\n                    ");
-                  dom.appendChild(el1, el2);
-                  var el2 = dom.createElement("div");
-                  dom.setAttribute(el2,"class","col-md-2");
-                  var el3 = dom.createTextNode("\n                        ");
-                  dom.appendChild(el2, el3);
-                  var el3 = dom.createComment("");
-                  dom.appendChild(el2, el3);
-                  var el3 = dom.createTextNode("\n                    ");
-                  dom.appendChild(el2, el3);
-                  dom.appendChild(el1, el2);
-                  var el2 = dom.createTextNode("\n                    ");
-                  dom.appendChild(el1, el2);
-                  var el2 = dom.createElement("div");
-                  dom.setAttribute(el2,"class","col-md-2");
                   var el3 = dom.createTextNode("\n                        ");
                   dom.appendChild(el2, el3);
                   var el3 = dom.createComment("");
@@ -2049,7 +2067,13 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   dom.appendChild(el2, el3);
                   var el3 = dom.createTextNode("\n                        ");
                   dom.appendChild(el2, el3);
-                  var el3 = dom.createComment("");
+                  var el3 = dom.createElement("div");
+                  var el4 = dom.createTextNode("\n                            ");
+                  dom.appendChild(el3, el4);
+                  var el4 = dom.createComment("");
+                  dom.appendChild(el3, el4);
+                  var el4 = dom.createTextNode("\n                        ");
+                  dom.appendChild(el3, el4);
                   dom.appendChild(el2, el3);
                   var el3 = dom.createTextNode("\n                    ");
                   dom.appendChild(el2, el3);
@@ -2093,13 +2117,13 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   var morph2 = dom.createMorphAt(dom.childAt(element0, [5]),1,1);
                   var morph3 = dom.createMorphAt(dom.childAt(element0, [7]),1,1);
                   var morph4 = dom.createMorphAt(element1,1,1);
-                  var morph5 = dom.createMorphAt(element1,3,3);
+                  var morph5 = dom.createMorphAt(dom.childAt(element1, [3]),1,1);
                   set(env, context, "annotation", blockArguments[0]);
                   set(env, context, "index", blockArguments[1]);
-                  inline(env, morph0, context, "item-select", [], {"options": get(env, context, "attributes"), "value": get(env, context, "annotation.attribute"), "changed": "updateAttribute", "width": "82px", "name": get(env, context, "index"), "addSelected": true});
+                  inline(env, morph0, context, "item-select", [], {"class": "full-width", "options": get(env, context, "attributes"), "value": get(env, context, "annotation.attribute"), "changed": "updateAttribute", "name": get(env, context, "index"), "addSelected": true});
                   inline(env, morph1, context, "collapsible-text", [], {"fullText": get(env, context, "annotation.content"), "trimTo": 100, "title": get(env, context, "annotation.content")});
-                  inline(env, morph2, context, "item-select", [], {"options": get(env, context, "itemFields"), "value": get(env, context, "annotation.field"), "changed": "updateField", "width": "82px", "name": get(env, context, "index")});
-                  inline(env, morph3, context, "item-select", [], {"options": get(env, context, "weightFields"), "value": get(env, context, "annotation.weight"), "changed": "updateWeight", "width": "50px", "name": get(env, context, "index"), "addSelected": true});
+                  inline(env, morph2, context, "item-select", [], {"class": "full-width", "options": get(env, context, "itemFields"), "value": get(env, context, "annotation.field"), "changed": "updateField", "name": get(env, context, "index")});
+                  inline(env, morph3, context, "item-select", [], {"options": get(env, context, "weightFields"), "value": get(env, context, "annotation.weight"), "changed": "updateWeight", "name": get(env, context, "index"), "addSelected": true});
                   inline(env, morph4, context, "check-box", [], {"checked": get(env, context, "annotation.required"), "action": "updateRequired", "name": get(env, context, "index"), "value": get(env, context, "annotation.required"), "style": "margin:3px;"});
                   inline(env, morph5, context, "bs-button", [], {"clicked": "removeMapping", "clickedParam": get(env, context, "index"), "icon": "fa fa-icon fa-times", "size": "xs", "type": "danger", "title": "Remove Mapping"});
                   return fragment;
@@ -2252,7 +2276,7 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                   var el1 = dom.createTextNode("            ");
                   dom.appendChild(el0, el1);
                   var el1 = dom.createElement("div");
-                  dom.setAttribute(el1,"style","margin-left:142px;");
+                  dom.setAttribute(el1,"style","text-align:center;");
                   var el2 = dom.createTextNode("\n");
                   dom.appendChild(el1, el2);
                   var el2 = dom.createComment("");
@@ -2310,21 +2334,21 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                 var el2 = dom.createTextNode("\n            ");
                 dom.appendChild(el1, el2);
                 var el2 = dom.createElement("div");
-                dom.setAttribute(el2,"class","col-md-3 small-label");
+                dom.setAttribute(el2,"class","col-md-2 small-label");
                 var el3 = dom.createTextNode("Attribute");
                 dom.appendChild(el2, el3);
                 dom.appendChild(el1, el2);
                 var el2 = dom.createTextNode("\n            ");
                 dom.appendChild(el1, el2);
                 var el2 = dom.createElement("div");
-                dom.setAttribute(el2,"class","col-md-2 small-label");
+                dom.setAttribute(el2,"class","col-md-3 small-label");
                 var el3 = dom.createTextNode("Value");
                 dom.appendChild(el2, el3);
                 dom.appendChild(el1, el2);
                 var el2 = dom.createTextNode("\n            ");
                 dom.appendChild(el1, el2);
                 var el2 = dom.createElement("div");
-                dom.setAttribute(el2,"class","col-md-2 small-label");
+                dom.setAttribute(el2,"class","col-md-3 small-label");
                 var el3 = dom.createTextNode("Field");
                 dom.appendChild(el2, el3);
                 dom.appendChild(el1, el2);
@@ -2339,7 +2363,7 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
                 dom.appendChild(el1, el2);
                 var el2 = dom.createElement("div");
                 dom.setAttribute(el2,"class","col-md-2 small-label");
-                var el3 = dom.createTextNode("Required");
+                var el3 = dom.createTextNode("Req");
                 dom.appendChild(el2, el3);
                 dom.appendChild(el1, el2);
                 var el2 = dom.createTextNode("\n        ");
@@ -2506,18 +2530,9 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
           var el3 = dom.createTextNode("        ");
           dom.appendChild(el2, el3);
           dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n        ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("div");
-          dom.setAttribute(el2,"class","col-md-8");
-          var el3 = dom.createTextNode("\n");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createComment("");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("        ");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
           var el2 = dom.createTextNode("\n");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createComment("");
           dom.appendChild(el1, el2);
           var el2 = dom.createComment("");
           dom.appendChild(el1, el2);
@@ -2550,10 +2565,10 @@ define('portia-web/components/annotations-plugin/template', ['exports'], functio
           } else {
             fragment = this.build(dom);
           }
-          var element7 = dom.childAt(fragment, [1]);
-          var morph0 = dom.createMorphAt(dom.childAt(element7, [1]),1,1);
-          var morph1 = dom.createMorphAt(dom.childAt(element7, [3]),1,1);
-          var morph2 = dom.createMorphAt(element7,5,5);
+          var element8 = dom.childAt(fragment, [1]);
+          var morph0 = dom.createMorphAt(dom.childAt(element8, [1]),1,1);
+          var morph1 = dom.createMorphAt(element8,3,3);
+          var morph2 = dom.createMorphAt(element8,4,4);
           var morph3 = dom.createMorphAt(fragment,3,3,contextualElement);
           dom.insertBoundary(fragment, null);
           block(env, morph0, context, "unless", [get(env, context, "data.suggested")], {}, child0, null);
@@ -6174,10 +6189,12 @@ define('portia-web/controllers/project', ['exports', 'ember', 'portia-web/contro
 
             return [{
                 component: 'file-download'
-            }, copyAction, {
-                component: 'edit-items',
-                controller: this
-            }, {
+            }, copyAction,
+            //            {
+            //                component: 'edit-items',
+            //                controller: this
+            //            },
+            {
                 text: 'Documentation',
                 url: 'http://support.scrapinghub.com/list/24895-knowledge-base/?category=17201'
             }];

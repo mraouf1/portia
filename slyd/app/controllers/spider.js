@@ -401,24 +401,32 @@ export default BaseController.extend({
     addEnglishUrl: function(url){
         if(url) {
             this.set('model.english_url', url);
+        }else{
+            this.set('model.english_url', '');
         }
     },
 
     addEnglishUrlArgs: function(args){
         if(args) {
             this.set('model.english_url_args', args);
+        }else{
+            this.set('model.english_url_args', '');
         }
     },
 
     addArabicUrl: function(url){
         if(url) {
             this.set('model.arabic_url', url);
+        }else{
+            this.set('model.arabic_url', '');
         }
     },
 
     addArabicUrlArgs: function(args){
         if(args) {
             this.set('model.arabic_url_args', args);
+        }else{
+            this.set('model.arabic_url_args', '');
         }
     },
 

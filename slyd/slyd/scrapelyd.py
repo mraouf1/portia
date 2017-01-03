@@ -9,6 +9,10 @@ import json
 MERCHANT_SETTING_BASE = """
 # Automatically created by: slyd
 # -*- coding: utf-8 -*-
+
+from scrapy.contrib.spiders import Rule
+from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
+
 LOG_FILE = '/var/kipp/logs/{merchant_name}.log'
 COUNTRY_CODE = "{country_code}"
 CURRENCY_CODE = "{currency_code}"
@@ -22,13 +26,13 @@ RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
 localization_config = {{
     'english': {{
         'url': "{english_url}",
-        'cookie_config': [{english_language_cookie}],
-        'url_args': "{english_url_args}"
+        'cookie_config': {english_language_cookie},
+        'url_args': {english_url_args}
     }},
     'arabic': {{
         'url': "{arabic_url}",
-        'cookie_config': [{arabic_language_cookie}],
-        'url_args': "{arabic_url_args}"
+        'cookie_config': {arabic_language_cookie},
+        'url_args': {arabic_url_args}
     }}
 }}
 """
@@ -165,7 +169,7 @@ class Train(ScrapelyResource):
         arabic_url_args = spider_spec['arabic_url_args']
         english_cookie_name = spider_spec['english_cookie_name']
         english_cookie_value = spider_spec['english_cookie_value']
-        arabic_cookie_name = spider_spec['english_url_args']
+        arabic_cookie_name = spider_spec['arabic_cookie_name']
         arabic_cookie_value = spider_spec['arabic_cookie_value']
         use_language_cookies = spider_spec['cookies_enabled']
         use_currency_cookies = spider_spec['use_currency_cookies']
@@ -188,6 +192,17 @@ class Train(ScrapelyResource):
         :param args:
         :return:
         """
+        if kwargs['english_url_args'] :
+            english_url_args = "\""+kwargs["english_url_args"] +"\""
+            kwargs['english_url_args'] = english_url_args
+        else:
+            kwargs['english_url_args'] = None
+        if kwargs['arabic_url_args']:
+            arabic_url_args =  "\""+kwargs["arabic_url_args"] +"\""
+            kwargs['arabic_url_args'] =  arabic_url_args
+        else:
+          kwargs['arabic_url_args'] = None
+
         if kwargs['use_language_cookies']:
             english_language_cookie = """
                 {{'name':"{english_cookie_name}", 'value': "{english_cookie_value}",
@@ -208,26 +223,31 @@ class Train(ScrapelyResource):
         else:
             currency_cookie = None
 
-        kwargs.setdefault('english_language_cookie', english_language_cookie)
-        kwargs.setdefault('arabic_language_cookie', arabic_language_cookie)
-        kwargs.setdefault('currency_cookie', currency_cookie)
-
         if kwargs['use_language_cookies'] and kwargs['use_currency_cookies']:
             general_cookie = """
-                [{english_language_cookie}, {currency_cookie}]
-                """.format(**kwargs)
+                [{}, {}]
+                """.format(english_language_cookie,currency_cookie)
         elif kwargs['use_language_cookies']:
             general_cookie = """
-                [{english_language_cookie}]
-                """.format(**kwargs)
+                [{}]
+                """.format(english_language_cookie)
+            if english_language_cookie:
+                english_language_cookie = "["+english_language_cookie+"]"
+            if arabic_language_cookie:
+                arabic_language_cookie = "["+arabic_language_cookie+"]"
         elif kwargs['use_currency_cookies']:
             general_cookie = """
                 [{currency_cookie}]
-                """.format(**kwargs)
+                """.format(currency_cookie)
+            currency_cookie = [currency_cookie]
         else:
             general_cookie = None
 
         kwargs.setdefault('general_cookie', general_cookie)
+        kwargs.setdefault('english_language_cookie', english_language_cookie)
+        kwargs.setdefault('arabic_language_cookie', arabic_language_cookie)
+        kwargs.setdefault('currency_cookie', currency_cookie)
+
         merchant_setting = MERCHANT_SETTING_BASE.format(**kwargs)
 
         with open(file_path, 'w') as f:
