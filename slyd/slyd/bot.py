@@ -38,6 +38,7 @@ from .html import html4annotation, extract_html
 from .resource import SlydJsonResource
 import urllib2
 import cookielib
+import random
 
 def create_bot_resource(spec_manager):
     bot = Bot(spec_manager.settings, spec_manager)
@@ -95,7 +96,12 @@ class GetCookies(BotResource):
 
     def _fetch(self, url, opener):
         request = urllib2.Request(url)
-        request.add_header('User-agent', 'Mozilla/5.0')
+        user_agents = ['Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11',
+                       'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) \
+                       Chrome/41.0.2228.0 Safari/537.36',
+                       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 \
+                       (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A']
+        request.add_header('User-agent', user_agents[random.randint(0,2)])
         return opener.open(request)
 
     def _dump(self, cookies):
