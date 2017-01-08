@@ -23,6 +23,8 @@ MERCHANT_URLS_CONFIG = [{{"url": "{merchant_url}", 'cookie_config': {general_coo
 RULES = [Rule(LxmlLinkExtractor(allow={allow_regex},
                                 deny={deny_regex}),
               callback='parse_item', follow=True)]
+LOCAL_IMAGES = {local_images}
+RENDER_JS = {render_js}
 localization_config = {{
     'english': {{
         'url': "{english_url}",
@@ -175,6 +177,8 @@ class Train(ScrapelyResource):
         use_currency_cookies = spider_spec['use_currency_cookies']
         currency_cookie_name = spider_spec['currency_cookie_name']
         currency_cookie_value = spider_spec['currency_cookie_value']
+        local_images = spider_spec['local_images']
+        render_js = spider_spec['js_enabled']
         self._create_setting_file(merchant_file_path, merchant_name=merchant_name, country_code=country_code,
                                   start_urls=start_urls, allowed_domains=allowed_domains, merchant_url=merchant_url,
                                   allow_regex=allow_regex, deny_regex=deny_regex, currency_code=currency_code,
@@ -183,7 +187,7 @@ class Train(ScrapelyResource):
                                   english_cookie_value=english_cookie_value, arabic_cookie_name=arabic_cookie_name,
                                   arabic_cookie_value=arabic_cookie_value, use_language_cookies=use_language_cookies,
                                   use_currency_cookies=use_currency_cookies, currency_cookie_name=currency_cookie_name,
-                                  currency_cookie_value=currency_cookie_value)
+                                  currency_cookie_value=currency_cookie_value, local_images=local_images, render_js=render_js)
 
     def _create_setting_file(self, file_path, **kwargs):
         """
