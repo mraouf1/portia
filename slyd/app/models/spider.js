@@ -15,7 +15,7 @@ export default SimpleModel.extend({
         'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args',
         'cookies_enabled','english_cookie_name', 'english_cookie_value',
         'arabic_cookie_name', 'arabic_cookie_value', 'use_currency_cookies',
-        'currency_cookie_name', 'currency_cookie_value'],
+        'currency_cookie_name', 'currency_cookie_value', 'local_images'],
     serializedRelations: ['templates'],
     start_urls: null,
     country_code: null,
