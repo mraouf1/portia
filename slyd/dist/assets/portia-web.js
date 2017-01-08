@@ -6265,6 +6265,7 @@ define('portia-web/controllers/project', ['exports', 'ember', 'portia-web/contro
                     names = [];
                 }
                 var baseName = URI.parse(siteUrl).hostname.replace(/^www[0-9]?\./, '');
+                baseName = baseName.replace(/\.com|\.net/, '').replace(/\.eg|\.ae|\.sa|\.ke/, '');
                 var newSpiderName = this.getUnusedName(baseName, names);
                 var spider = Spider['default'].create({ 'name': newSpiderName,
                     'start_urls': [siteUrl],
@@ -9796,7 +9797,7 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
     var ARRAY_PROPERTIES = ["start_urls", "follow_patterns", "exclude_patterns", "js_enable_patterns", "js_disable_patterns", "allowed_domains", "templates", "template_names", "page_actions"];
 
     exports['default'] = SimpleModel['default'].extend({
-        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code', 'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args', 'cookies_enabled', 'english_cookie_name', 'english_cookie_value', 'arabic_cookie_name', 'arabic_cookie_value', 'use_currency_cookies', 'currency_cookie_name', 'currency_cookie_value'],
+        serializedProperties: ['start_urls', 'start_urls', 'links_to_follow', 'follow_patterns', 'js_enabled', 'js_enable_patterns', 'js_disable_patterns', 'exclude_patterns', 'respect_nofollow', 'init_requests', 'template_names', 'page_actions', 'country_code', 'currency_code', 'english_url', 'arabic_url', 'english_url_args', 'arabic_url_args', 'cookies_enabled', 'english_cookie_name', 'english_cookie_value', 'arabic_cookie_name', 'arabic_cookie_value', 'use_currency_cookies', 'currency_cookie_name', 'currency_cookie_value', 'local_images'],
         serializedRelations: ['templates'],
         start_urls: null,
         country_code: null,
@@ -22075,6 +22076,24 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             dom.appendChild(el2, el3);
             var el3 = dom.createElement("span");
             dom.setAttribute(el3,"class","important-label");
+            var el4 = dom.createTextNode("Local images");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n            ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("div");
+            dom.setAttribute(el2,"style","margin-top:10px;margin-bottom:10px");
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createComment("");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("span");
+            dom.setAttribute(el3,"class","important-label");
             var el4 = dom.createTextNode("Enable JS");
             dom.appendChild(el3, el4);
             dom.appendChild(el2, el3);
@@ -22118,24 +22137,26 @@ define('portia-web/templates/spider/toolbox', ['exports'], function (exports) {
             }
             var element7 = dom.childAt(fragment, [1]);
             var element8 = dom.childAt(element7, [3]);
-            var element9 = dom.childAt(element7, [11]);
+            var element9 = dom.childAt(element7, [13]);
             var morph0 = dom.createMorphAt(element7,1,1);
             var morph1 = dom.createMorphAt(element8,1,1);
             var morph2 = dom.createMorphAt(element8,5,5);
             var morph3 = dom.createMorphAt(element7,5,5);
             var morph4 = dom.createMorphAt(element7,9,9);
-            var morph5 = dom.createMorphAt(element9,1,1);
-            var morph6 = dom.createMorphAt(element9,5,5);
-            var morph7 = dom.createMorphAt(element7,13,13);
+            var morph5 = dom.createMorphAt(dom.childAt(element7, [11]),1,1);
+            var morph6 = dom.createMorphAt(element9,1,1);
+            var morph7 = dom.createMorphAt(element9,5,5);
+            var morph8 = dom.createMorphAt(element7,15,15);
             element(env, element7, context, "bind-attr", [], {"style": "mid_box_style"});
             inline(env, morph0, context, "item-select", [], {"options": get(env, context, "followPatternOptions"), "value": get(env, context, "controller.links_to_follow")});
             inline(env, morph1, context, "check-box", [], {"checked": get(env, context, "showLinks"), "name": "showLinks"});
             inline(env, morph2, context, "inline-help", [], {"message": "overlay_blocked_links"});
             block(env, morph3, context, "if", [get(env, context, "displayNofollow")], {}, child0, null);
             block(env, morph4, context, "if", [get(env, context, "displayEditPatterns")], {}, child1, null);
-            inline(env, morph5, context, "check-box", [], {"checked": get(env, context, "model.js_enabled"), "name": "enableJS"});
-            inline(env, morph6, context, "inline-help", [], {"message": "enable_js"});
-            block(env, morph7, context, "if", [get(env, context, "model.js_enabled")], {}, child2, null);
+            inline(env, morph5, context, "check-box", [], {"checked": get(env, context, "model.local_images"), "name": "localImages"});
+            inline(env, morph6, context, "check-box", [], {"checked": get(env, context, "model.js_enabled"), "name": "enableJS"});
+            inline(env, morph7, context, "inline-help", [], {"message": "enable_js"});
+            block(env, morph8, context, "if", [get(env, context, "model.js_enabled")], {}, child2, null);
             return fragment;
           }
         };
