@@ -203,6 +203,11 @@
             {{/if}}
 
             <div style="margin-top:10px;margin-bottom:10px">
+                {{check-box checked=model.local_images name="localImages"}}
+                <span class="important-label">Local images</span>
+            </div>
+
+            <div style="margin-top:10px;margin-bottom:10px">
                 {{check-box checked=model.js_enabled name="enableJS"}}
                 <span class="important-label">Enable JS</span>
                 {{inline-help message="enable_js"}}
