@@ -40,6 +40,7 @@ export default SimpleModel.extend({
     use_currency_cookies: false,
     currency_cookie_name: null,
     currency_cookie_value: null,
+    local_images: false,
 
     init: function() {
         ARRAY_PROPERTIES.forEach((prop) => {
