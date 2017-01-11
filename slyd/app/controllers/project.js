@@ -154,7 +154,9 @@ export default BaseController.extend({
                     names = [];
                 }
                 var baseName = URI.parse(siteUrl).hostname.replace(/^www[0-9]?\./, '');
-                baseName = baseName.replace(/\.com|\.net/,'').replace(/\.eg|\.ae|\.sa|\.ke/,'');
+                baseName = baseName.replace(/\.com|\.net|\.co/,'');
+                baseName = baseName.replace(/\.eg|\.ae|\.sa|\.ke/,'');
+                baseName = baseName.replace(/^eg\.|^sa\.|^ae\.|^ke\.|^egypt\.|^saudi\.|^uae\.|^en-ae\.|^en-sa\./,'');
                 var newSpiderName = this.getUnusedName(baseName, names);
                 var spider = Spider.create(
                     { 'name': newSpiderName,

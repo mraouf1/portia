@@ -34,8 +34,8 @@ export default BaseController.extend({
     editAllStartUrlsAction: 'editAllStartUrls',
     editAllStartUrlsText: 'Edit All',
 
-    countryCodes: ["eg", "sa", "ae"],
-    currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
+    countryCodes: ["eg", "sa", "ae", "ke"],
+    currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR", "KSh", "KES"],
 
     englishUrl: function(){
         return this.get('model.english_url');
