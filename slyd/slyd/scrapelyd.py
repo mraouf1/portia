@@ -27,12 +27,12 @@ LOCAL_IMAGES = {local_images}
 RENDER_JS = {render_js}
 localization_config = {{
     'english': {{
-        'url': "{english_url}",
+        'url': {english_url},
         'cookie_config': {english_language_cookie},
         'url_args': {english_url_args}
     }},
     'arabic': {{
-        'url': "{arabic_url}",
+        'url': {arabic_url},
         'cookie_config': {arabic_language_cookie},
         'url_args': {arabic_url_args}
     }}
@@ -196,6 +196,16 @@ class Train(ScrapelyResource):
         :param args:
         :return:
         """
+        if kwargs['english_url']:
+            english_url = "\""+kwargs["english_url"] +"\""
+            kwargs['english_url'] = english_url
+        else:
+            kwargs['english_url'] = None
+        if kwargs['arabic_url']:
+            english_url = "\""+kwargs["arabic_url"] +"\""
+            kwargs['arabic_url'] = english_url
+        else:
+            kwargs['arabic_url'] = None
         if kwargs['english_url_args'] :
             english_url_args = "\""+kwargs["english_url_args"] +"\""
             kwargs['english_url_args'] = english_url_args
@@ -205,7 +215,7 @@ class Train(ScrapelyResource):
             arabic_url_args =  "\""+kwargs["arabic_url_args"] +"\""
             kwargs['arabic_url_args'] =  arabic_url_args
         else:
-          kwargs['arabic_url_args'] = None
+            kwargs['arabic_url_args'] = None
 
         if kwargs['use_language_cookies']:
             english_language_cookie = """
@@ -241,7 +251,7 @@ class Train(ScrapelyResource):
                 arabic_language_cookie = "["+arabic_language_cookie+"]"
         elif kwargs['use_currency_cookies']:
             general_cookie = """
-                [{currency_cookie}]
+                [{}]
                 """.format(currency_cookie)
             currency_cookie = [currency_cookie]
         else:
