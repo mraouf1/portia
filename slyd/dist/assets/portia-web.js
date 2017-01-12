@@ -6265,7 +6265,9 @@ define('portia-web/controllers/project', ['exports', 'ember', 'portia-web/contro
                     names = [];
                 }
                 var baseName = URI.parse(siteUrl).hostname.replace(/^www[0-9]?\./, '');
-                baseName = baseName.replace(/\.com|\.net/, '').replace(/\.eg|\.ae|\.sa|\.ke/, '');
+                baseName = baseName.replace(/\.com|\.net|\.co/, '');
+                baseName = baseName.replace(/\.eg|\.ae|\.sa|\.ke/, '');
+                baseName = baseName.replace(/^eg\.|^sa\.|^ae\.|^ke\.|^egypt\.|^saudi\.|^uae\.|^en-ae\.|^en-sa\./, '');
                 var newSpiderName = this.getUnusedName(baseName, names);
                 var spider = Spider['default'].create({ 'name': newSpiderName,
                     'start_urls': [siteUrl],
@@ -6589,8 +6591,8 @@ define('portia-web/controllers/spider', ['exports', 'ember', 'portia-web/control
         editAllStartUrlsAction: 'editAllStartUrls',
         editAllStartUrlsText: 'Edit All',
 
-        countryCodes: ["eg", "sa", "ae"],
-        currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR"],
+        countryCodes: ["eg", "sa", "ae", "ke"],
+        currencyCodes: ["EGP", "AED", "SAR", "USD", "EUR", "KSh", "KES"],
 
         englishUrl: (function () {
             return this.get('model.english_url');
@@ -9822,6 +9824,7 @@ define('portia-web/models/spider', ['exports', 'ember', 'portia-web/models/simpl
         use_currency_cookies: false,
         currency_cookie_name: null,
         currency_cookie_value: null,
+        local_images: false,
 
         init: function init() {
             var _this = this;
