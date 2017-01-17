@@ -200,12 +200,12 @@ class Train(ScrapelyResource):
             english_url = "\""+kwargs["english_url"] +"\""
             kwargs['english_url'] = english_url
         else:
-            kwargs['english_url'] = None
+            kwargs['english_url'] = "''"
         if kwargs['arabic_url']:
             english_url = "\""+kwargs["arabic_url"] +"\""
             kwargs['arabic_url'] = english_url
         else:
-            kwargs['arabic_url'] = None
+            kwargs['arabic_url'] = "''"
         if kwargs['english_url_args'] :
             english_url_args = "\""+kwargs["english_url_args"] +"\""
             kwargs['english_url_args'] = english_url_args
