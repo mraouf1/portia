@@ -74,6 +74,8 @@ export default Ember.Component.extend({
 
     cssEnabled: true, // Only in "select" mode
 
+    htmlEnabled: true,
+
     redrawSprites: function() {
         this.redrawNow();
     }.observes('sprites.sprites.@each', 'sprites'),
@@ -96,6 +98,7 @@ export default Ember.Component.extend({
         this.set('pageActions', options.pageActions);
         if(options.mode && options.mode !== this.get('mode')) {
             this.set('cssEnabled', true);
+            this.set('htmlEnabled', true);
             this.set('mode', options.mode);
             Ember.run.next(this, this.emptyIframe);
             this.set('loading', false);
@@ -274,6 +277,19 @@ export default Ember.Component.extend({
         }
         this.redrawNow();
         this.toggleProperty('cssEnabled');
+    },
+
+    /**
+     * Only works in "select" mode
+     */
+    toggleHTML: function() {
+        this.assertInMode('select');
+        var iframe = this.getIframe();
+        console.log('xxxxxxxxxxxxxxx')
+        console.log(iframe);
+
+        this.redrawNow();
+        this.toggleProperty('htmlEnabled');
     },
 
     /**

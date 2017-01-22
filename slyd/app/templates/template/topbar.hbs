@@ -21,6 +21,11 @@
 			{{#bs-button clicked="toggleCSS" icon="fa fa-icon fa-file-code-o" classNameBindings="documentView.cssEnabled::btn-danger" size="sm" title="Toggle CSS"}}
 				CSS
 			{{/bs-button}}
+        {{/if}}
+        {{#if showToggleHTML}}
+            {{#bs-button clicked="toggleHTML" icon="fa fa-icon fa-file-code-o" classNameBindings="documentView.htmlEnabled::btn-danger" size="sm" title="Toggle HTML"}}
+				HTML
+			{{/bs-button}}
 		{{/if}}
 	</span>
 </div>

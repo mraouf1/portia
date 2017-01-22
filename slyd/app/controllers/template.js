@@ -27,6 +27,8 @@ export default BaseController.extend({
 
     showToggleCSS: true,
 
+    showToggleHTML: true,
+
     showFloatingAnnotationWidgetAt: null,
 
     floatingAnnotation: null,
@@ -468,6 +470,10 @@ export default BaseController.extend({
 
         toggleCSS: function() {
             this.documentView.toggleCSS();
+        },
+
+        toggleHTML: function() {
+            this.documentView.toggleHTML();
         },
 
         updatePluginField: function(field, value) {
